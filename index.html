@@ -25,7 +25,6 @@
             .user-card { margin: 0 2px !important; flex-shrink: 0 !important; }
             .user-card:hover, .user-card:active { transform: translateY(-25px) scale(1.1) !important; z-index: 1000 !important; margin: 0 10px !important; }
             
-            /* Deste ve Yerleşimi */
             #draw-pile-container { top: 42% !important; left: 15% !important; transform: translate(-50%, -50%) !important; }
             #discard-pile-container { left: 65% !important; top: 42% !important; }
 
@@ -111,7 +110,6 @@
         
         #user-player { bottom: 30px; left: 0; width: 100%; height: 160px; align-items: flex-end; z-index: 100; }
         
-        /* Renk Göstergesi ve Metni */
         #center-area { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 300px; display: flex; justify-content: center; align-items: center; pointer-events: none; }
         #color-indicator { 
             position: absolute; width: 220px; height: 220px; border-radius: 50%; 
@@ -282,6 +280,7 @@ let gameState = null;
 let lastChatCount = 0;
 let isDrawing = false; 
 let isAuthReady = false; 
+let localUnoPressed = false; // YEREL UNO HAFIZASI
 
 const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
 function playSfx(t){
@@ -401,6 +400,7 @@ function enterLobby(roomId, index) {
     document.getElementById('menu-screen').classList.add('hidden');
     document.getElementById('lobby-screen').classList.remove('hidden');
     document.getElementById('lobby-room-code').innerText = "ODA: " + roomId;
+    localUnoPressed = false;
     
     gameUnsubscribe = getGameRef(roomId).onSnapshot(snapshot => {
         if (!snapshot.exists) { leaveRoom(false); return; }
@@ -447,21 +447,19 @@ function leaveRoom() {
 }
 
 async function initializeGameLogic() {
-    // STANDART 108 KARTLIK UNO DESTESİ
     const colors = ['red','blue','green','yellow'];
-    // 0'dan 1 tane, diğerlerinden 2 şer tane
+    const values = ['0','1','2','3','4','5','6','7','8','9','skip','reverse','draw2'];
     let deck = [];
     
     colors.forEach(c => {
-        deck.push({c, v: '0', t:'n'}); // 1 tane 0
+        deck.push({c, v: '0', t:'n'}); 
         const values = ['1','2','3','4','5','6','7','8','9','skip','reverse','draw2'];
         values.forEach(v => {
-            deck.push({c, v, t:'n'}); // 1. kopya
-            deck.push({c, v, t:'n'}); // 2. kopya
+            deck.push({c, v, t:'n'}); 
+            deck.push({c, v, t:'n'}); 
         });
     });
     
-    // 4 Wild, 4 Wild Draw 4
     for(let i=0; i<4; i++) {
         deck.push({c:'black', v:'W', t:'wild'});
         deck.push({c:'black', v:'+4', t:'wild4'});
@@ -523,7 +521,6 @@ function updateGameUI(data) {
              el.style.zIndex = 10;
         }
         
-        // Joker kartı ise ve renk seçilmişse, görsel olarak o renge bürünsün
         if (card.c === 'black' && isTop && data.curColor !== 'black') {
              el.className = `card ${data.curColor}`;
              let txt=card.v; if(txt==='W')txt='🌈'; else if(txt==='+4')txt='+4';
@@ -552,9 +549,7 @@ function updateGameUI(data) {
     warning.classList.remove('clickable'); 
 
     if (data.turn === myPlayerIndex) {
-        // Geçerli kartı var mı kontrol et
         const canPlay = data.players[myPlayerIndex].hand.some(c => isValid(c, data.curColor, data.curVal));
-        
         if (!canPlay) {
             warning.innerText = "KART ÇEK";
             warning.style.background = '#d32f2f';
@@ -576,9 +571,7 @@ function updateGameUI(data) {
 
 function renderMyHand(hand, data) {
     const container = document.getElementById('user-hand'); container.innerHTML = '';
-    // Kartları renge göre, sonra sayıya göre sırala
     hand.sort((a,b) => a.c === b.c ? String(a.v).localeCompare(String(b.v)) : a.c.localeCompare(b.c));
-    
     hand.forEach((c, idx) => {
         const el = makeCard(c); el.classList.add('user-card');
         if (data.turn === myPlayerIndex) {
@@ -607,8 +600,6 @@ function renderOpponentHand(count) {
 
 function updateColor(c, v) { 
     document.getElementById('color-indicator').style.background = {red:'var(--red)',blue:'var(--blue)',green:'var(--green)',yellow:'var(--yellow)',black:'#333'}[c]||'#333'; 
-    
-    // ORTAYA METİN YAZMA (DEBUG & GÖRSEL TEYİT)
     const nameMap = {red:'KIRMIZI', blue:'MAVİ', green:'YEŞİL', yellow:'SARI', black:'BELİRSİZ'};
     let valTxt = v;
     if(valTxt==='skip') valTxt='PAS';
@@ -616,7 +607,6 @@ function updateColor(c, v) {
     if(valTxt==='draw2') valTxt='+2';
     if(valTxt==='W') valTxt='JOKER';
     if(valTxt==='+4') valTxt='+4';
-    
     document.getElementById('color-name-display').innerText = nameMap[c] || '';
     document.getElementById('value-display').innerText = valTxt;
 }
@@ -632,18 +622,10 @@ function makeCard(c){
     d.innerHTML=`<div class="card-inner"><span class="small-num tl">${txt}</span><span>${txt}</span><span class="small-num br">${txt}</span></div>`; return d;
 }
 
-// --- KRİTİK GÜNCELLEME: KURAL MOTORU ---
 function isValid(card, curColor, curVal) { 
-    // 1. Eğer kart Joker ise her zaman atılır
     if (card.c === 'black') return true;
-    
-    // 2. Renk uyuyorsa atılır
     if (card.c === curColor) return true;
-    
-    // 3. Değer uyuyorsa atılır (String dönüşümü ile güvenli kontrol)
-    // Örn: Mavi 7 üzerine Sarı 7 -> "7" === "7" -> True
     if (String(card.v) === String(curVal)) return true;
-    
     return false; 
 }
 
@@ -670,16 +652,20 @@ async function executeMove(card, idx, nextColor) {
     let nextDeck = [...gameState.deck];
     let nextPlayers = [...gameState.players];
     
-    // --- UNO CEZASI KONTROLÜ ---
+    // --- UNO CEZASI KONTROLÜ (YENİLENMİŞ) ---
+    // Hem sunucu bilgisini hem de YEREL TIKLAMA bilgisini kontrol et
     let penalty = false;
-    if (myHand.length === 0 && !gameState.players[myPlayerIndex].uno) {
-        penalty = true;
-        msg("UNO demeyi unuttun! +2 Ceza", 3000);
-        for(let i=0; i<2; i++) {
-           if (nextDeck.length > 0) myHand.push(nextDeck.pop());
+    if (myHand.length === 0) {
+        const serverUno = gameState.players[myPlayerIndex].uno;
+        if (!serverUno && !localUnoPressed) {
+            penalty = true;
+            msg("UNO demediğin için +2 Ceza yedin!", 3000);
+            for(let i=0; i<2; i++) { if (nextDeck.length > 0) myHand.push(nextDeck.pop()); }
         }
         nextPlayers[myPlayerIndex].uno = false;
+        localUnoPressed = false; // Reset local
     }
+    // ----------------------------------------
     
     let nextDirection = gameState.direction;
     let skipTurn = false; let cardsToDraw = 0;
@@ -693,21 +679,16 @@ async function executeMove(card, idx, nextColor) {
         const oppIndex = (myPlayerIndex + 1) % 2;
         for(let i=0; i<cardsToDraw; i++) { if (nextDeck.length > 0) nextPlayers[oppIndex].hand.push(nextDeck.pop()); }
     }
-    nextPlayers[myPlayerIndex].hand = myHand; nextPlayers[myPlayerIndex].uno = false; 
+    nextPlayers[myPlayerIndex].hand = myHand; 
     
-    // SIRA HESAPLAMA DÜZELTMESİ
     let nextTurn = (gameState.turn + nextDirection + 2) % 2;
     if (skipTurn) nextTurn = (nextTurn + nextDirection + 2) % 2;
     
     let status = 'playing'; let winnerIndex = -1;
     if (myHand.length === 0 && !penalty) { status = 'finished'; winnerIndex = myPlayerIndex; }
     
-    // Joker atıldığında bir sonraki "Sayı Eşleşmesi" hatasını önlemek için
-    // curVal değerini özel bir karaktere çekiyoruz. Böylece Mavi Joker üzerine Sarı 7 atılamaz (Sadece renk tutmalı).
     let finalVal = card.v;
-    if(card.c === 'black') {
-        finalVal = 'wild_reset'; 
-    }
+    if(card.c === 'black') finalVal = 'wild_reset'; 
 
     await getGameRef(currentRoomId).update({ 
         pile: firebase.firestore.FieldValue.arrayUnion(card), 
@@ -724,10 +705,11 @@ async function executeMove(card, idx, nextColor) {
 
 async function tryDrawCard() {
     if (gameState.turn !== myPlayerIndex || !currentUser || isDrawing) return;
-    // Eğer oynanabilir kart varsa uyar, çektirme
     if (gameState.players[myPlayerIndex].hand.some(c => isValid(c, gameState.curColor, gameState.curVal))) { msg("Oyna!", 1000); return; }
     
     isDrawing = true; playSfx('draw');
+    localUnoPressed = false; // Kart çekince uno durumu sıfırlanır
+    
     let nextDeck = [...gameState.deck]; let nextPlayers = [...gameState.players]; let nextTurn = gameState.turn;
     if (nextDeck.length === 0) {
         let oldPile = [...gameState.pile]; if (oldPile.length <= 1) { isDrawing=false; return; }
@@ -736,7 +718,6 @@ async function tryDrawCard() {
     }
     const card = nextDeck.pop(); nextPlayers[myPlayerIndex].hand.push(card);
     
-    // Çekilen kart oynanamıyorsa sıra geçer
     if (!isValid(card, gameState.curColor, gameState.curVal)) { 
         nextTurn = (gameState.turn + gameState.direction + 2) % 2; 
         msg("Sıra Rakipte", 1500); 
@@ -748,6 +729,7 @@ async function tryDrawCard() {
 
 async function callUno() {
     if (!currentUser) return; playSfx('uno');
+    localUnoPressed = true; // LOCAL OLARAK KAYDET
     const players = [...gameState.players]; players[myPlayerIndex].uno = true;
     await getGameRef(currentRoomId).update({ players: players }); msg("UNO!", 2000); document.getElementById('uno-btn').style.display = 'none';
 }
