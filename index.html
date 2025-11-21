@@ -17,7 +17,6 @@
             .small-num { display: none !important; }
             .card { font-size: 32px !important; border-width: 3px !important; }
             
-            /* MOBİL DÜZENLEMELERİ */
             #user-player { bottom: 110px !important; height: 100px !important; } 
             
             /* KART ARALIKLARI */
@@ -47,7 +46,6 @@
         .screen { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s; }
         .hidden { display: none !important; opacity: 0; pointer-events: none; }
 
-        /* MODERN BAŞLIK TASARIMI */
         .modern-title-container { display: flex; gap: 10px; margin-bottom: 30px; animation: floatTitle 3s ease-in-out infinite; }
         .title-card {
             width: 80px; height: 110px; border-radius: 15px;
@@ -652,8 +650,6 @@ async function executeMove(card, idx, nextColor) {
     let nextDeck = [...gameState.deck];
     let nextPlayers = [...gameState.players];
     
-    // --- UNO CEZASI KONTROLÜ (YENİLENMİŞ) ---
-    // Hem sunucu bilgisini hem de YEREL TIKLAMA bilgisini kontrol et
     let penalty = false;
     if (myHand.length === 0) {
         const serverUno = gameState.players[myPlayerIndex].uno;
@@ -663,9 +659,13 @@ async function executeMove(card, idx, nextColor) {
             for(let i=0; i<2; i++) { if (nextDeck.length > 0) myHand.push(nextDeck.pop()); }
         }
         nextPlayers[myPlayerIndex].uno = false;
-        localUnoPressed = false; // Reset local
+        localUnoPressed = false; 
     }
-    // ----------------------------------------
+    
+    // EĞER ELDEKİ KART SAYISI 1'DEN FAZLA İSE UNO DURUMUNU İPTAL ET
+    if (myHand.length > 1) {
+        nextPlayers[myPlayerIndex].uno = false;
+    }
     
     let nextDirection = gameState.direction;
     let skipTurn = false; let cardsToDraw = 0;
@@ -677,7 +677,11 @@ async function executeMove(card, idx, nextColor) {
     
     if (cardsToDraw > 0) {
         const oppIndex = (myPlayerIndex + 1) % 2;
-        for(let i=0; i<cardsToDraw; i++) { if (nextDeck.length > 0) nextPlayers[oppIndex].hand.push(nextDeck.pop()); }
+        for(let i=0; i<cardsToDraw; i++) { 
+            if (nextDeck.length > 0) nextPlayers[oppIndex].hand.push(nextDeck.pop()); 
+        }
+        // RAKİP CEZA YEDİYSE UNO DURUMU İPTAL
+        nextPlayers[oppIndex].uno = false;
     }
     nextPlayers[myPlayerIndex].hand = myHand; 
     
@@ -708,7 +712,7 @@ async function tryDrawCard() {
     if (gameState.players[myPlayerIndex].hand.some(c => isValid(c, gameState.curColor, gameState.curVal))) { msg("Oyna!", 1000); return; }
     
     isDrawing = true; playSfx('draw');
-    localUnoPressed = false; // Kart çekince uno durumu sıfırlanır
+    localUnoPressed = false; 
     
     let nextDeck = [...gameState.deck]; let nextPlayers = [...gameState.players]; let nextTurn = gameState.turn;
     if (nextDeck.length === 0) {
@@ -716,7 +720,11 @@ async function tryDrawCard() {
         const top = oldPile.pop(); const newDeck = oldPile.sort(() => Math.random() - 0.5);
         await getGameRef(currentRoomId).update({ pile: [top], deck: newDeck }); nextDeck = newDeck;
     }
-    const card = nextDeck.pop(); nextPlayers[myPlayerIndex].hand.push(card);
+    const card = nextDeck.pop(); 
+    nextPlayers[myPlayerIndex].hand.push(card);
+    
+    // KART ÇEKİNCE UNO DURUMUNU İPTAL ET
+    nextPlayers[myPlayerIndex].uno = false;
     
     if (!isValid(card, gameState.curColor, gameState.curVal)) { 
         nextTurn = (gameState.turn + gameState.direction + 2) % 2; 
@@ -729,7 +737,7 @@ async function tryDrawCard() {
 
 async function callUno() {
     if (!currentUser) return; playSfx('uno');
-    localUnoPressed = true; // LOCAL OLARAK KAYDET
+    localUnoPressed = true; 
     const players = [...gameState.players]; players[myPlayerIndex].uno = true;
     await getGameRef(currentRoomId).update({ players: players }); msg("UNO!", 2000); document.getElementById('uno-btn').style.display = 'none';
 }
