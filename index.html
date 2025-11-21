@@ -20,8 +20,8 @@
             /* MOBİL DÜZENLEMELERİ */
             #user-player { bottom: 110px !important; height: 100px !important; } 
             
-            /* Mobilde kartlar artık birbirine daha az giriyor (margin -2px) */
-            #user-hand { padding-bottom: 0 !important; overflow-x: auto !important; justify-content: flex-start !important; padding-left: 10px; }
+            /* Kartlar mobilde daha ayrık (padding-left artırıldı, margin gevşetildi) */
+            #user-hand { padding-bottom: 0 !important; overflow-x: auto !important; justify-content: flex-start !important; padding-left: 20px; }
             .user-card { margin: 0 -2px !important; flex-shrink: 0 !important; }
             
             .user-card:hover { transform: translateY(-25px) scale(1.1) !important; z-index: 1000 !important; margin: 0 5px !important; }
@@ -29,8 +29,8 @@
             /* Deste SOLA alındı */
             #draw-pile-container { top: 42% !important; left: 15% !important; transform: translate(-50%, -50%) !important; }
             
-            /* Yerdeki kartlar biraz sağa */
-            #discard-pile-container { left: 60% !important; top: 42% !important; }
+            /* Yerdeki kartlar sağa konumlandı (Kaydırma payı için yer açıldı) */
+            #discard-pile-container { left: 65% !important; top: 42% !important; }
 
             /* Orta Alan KÜÇÜLTÜLDÜ */
             #center-area { top: 42% !important; width: 180px !important; height: 180px !important; }
@@ -110,7 +110,6 @@
             pointer-events: auto; margin-top: 5px;
         }
         
-        /* Uyarı kutusuna tıklanabilirlik eklendi */
         #draw-warning.clickable { cursor: pointer; pointer-events: auto !important; transition: transform 0.2s; }
         #draw-warning.clickable:active { transform: translateX(-50%) scale(0.95); }
     </style>
@@ -192,7 +191,6 @@
         <div class="bot-hand" id="opp-hand"></div>
     </div>
     
-    <!-- UYARI DIV'ine onclick EKLENDI -->
     <div id="draw-warning" onclick="tryDrawCard()" style="position: absolute; bottom: 200px; left: 50%; transform: translateX(-50%); background: #c62828; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; border: 3px solid white; white-space: nowrap; pointer-events: none; z-index: 900;"></div>
     
     <div id="user-player" class="player-area">
@@ -223,7 +221,7 @@
 
 <script>
 // --- BURAYI DEGISTIRIN: Kendi Firebase Config Bilgilerinizi Buraya Yapistirin ---
-const firebaseConfig = {
+  const firebaseConfig = {
     apiKey: "AIzaSyCokrmiD0yG58lb5F2c2r_a2BwaQoWQmRQ",
     authDomain: "myuno-38ade.firebaseapp.com",
     projectId: "myuno-38ade",
@@ -231,7 +229,7 @@ const firebaseConfig = {
     messagingSenderId: "727778671836",
     appId: "1:727778671836:web:612fa29ffe505b829c4819",
     measurementId: "G-45HGXKNQFD"
-};
+  };
 // -------------------------------------------------------------------------------
 
 const app = firebase.initializeApp(firebaseConfig);
@@ -458,15 +456,20 @@ function updateGameUI(data) {
     visibleCards.forEach((card, index) => {
         const isTop = (index === visibleCards.length - 1); 
         const el = makeCard(card);
+        
         if (!isTop) {
-             el.style.transform = 'translate(0px, 35px) scale(0.95)';
+             // KART KAYDIRMA MANTIGI:
+             // Mobilde 45px sola kaydır, Desktopta 60px sola kaydır.
+             // Bu sayede alttaki kartın ortası görünür.
+             const offset = window.innerWidth <= 768 ? '-45px' : '-60px';
+             el.style.transform = `translate(${offset}, 0px) scale(1)`; 
              el.style.zIndex = 5;
-             el.style.filter = 'brightness(0.8)';
+             el.style.filter = 'brightness(0.95)';
         } else {
              el.style.transform = 'translate(0px, 0px)';
              el.style.zIndex = 10;
         }
-        // Joker kartların rengini doğru gösterme
+        
         if (card.c === 'black' && isTop && data.curColor !== 'black') {
              el.className = `card ${data.curColor}`;
              let txt=card.v; if(txt==='W')txt='🌈'; else if(txt==='+4')txt='+4';
@@ -492,13 +495,13 @@ function updateGameUI(data) {
     
     const warning = document.getElementById('draw-warning');
     warning.style.display = 'block';
-    warning.classList.remove('clickable'); // Varsayılan olarak tıklanamaz
+    warning.classList.remove('clickable'); 
 
     if (data.turn === myPlayerIndex) {
         if (!data.players[myPlayerIndex].hand.some(c => isValid(c, data.curColor, data.curVal))) {
             warning.innerText = "KART ÇEK";
             warning.style.background = '#d32f2f';
-            warning.classList.add('clickable'); // Sadece buradayken tıklanabilir
+            warning.classList.add('clickable'); 
         } else {
             warning.innerText = "SIRA SENDE";
             warning.style.background = '#00e676';
@@ -564,8 +567,6 @@ async function playCard(c, idx) {
         document.getElementById('color-picker').style.display = 'flex'; 
         return; 
     }
-    // Kart rengi "black" değilse, kesinlikle kartın kendi rengini kullanıyoruz (c.c)
-    // Bu, "Mavi 1" atılınca rengin kesinlikle "Mavi" olmasını sağlar.
     await executeMove(c, idx, c.c);
 }
 
@@ -594,12 +595,11 @@ async function executeMove(card, idx, nextColor) {
     let status = 'playing'; let winnerIndex = -1;
     if (myHand.length === 0) { status = 'finished'; winnerIndex = myPlayerIndex; }
     
-    // curColor: nextColor ile rengi KESİN olarak güncelliyoruz.
     await getGameRef(currentRoomId).update({ 
         pile: firebase.firestore.FieldValue.arrayUnion(card), 
         players: nextPlayers, 
         turn: nextTurn, 
-        curColor: nextColor, // <-- Burası önemli, yeni renk kartın rengi veya seçilen renk olur.
+        curColor: nextColor,
         curVal: card.v, 
         deck: nextDeck, 
         status: status, 
@@ -610,9 +610,7 @@ async function executeMove(card, idx, nextColor) {
 
 async function tryDrawCard() {
     if (gameState.turn !== myPlayerIndex || !currentUser || isDrawing) return;
-    // Eğer oynanacak kartın varsa çekmeye izin verme (isteğe bağlı, burada izin veriyoruz ama uyarıyoruz)
     if (gameState.players[myPlayerIndex].hand.some(c => isValid(c, gameState.curColor, gameState.curVal))) { msg("Oyna!", 1000); return; }
-    
     isDrawing = true; playSfx('draw');
     let nextDeck = [...gameState.deck]; let nextPlayers = [...gameState.players]; let nextTurn = gameState.turn;
     if (nextDeck.length === 0) {
