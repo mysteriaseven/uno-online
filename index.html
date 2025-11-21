@@ -3,91 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UNO Online</title>
+    <title>UNO Online - Fixed Rules</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
     <style>
         :root { --card-w: 72px; --card-h: 108px; --red: #ff5252; --blue: #448aff; --green: #69f0ae; --yellow: #ffd740; }
-        
         @media (max-width: 768px) {
             :root { --card-w: 54px; --card-h: 80px; }
             .small-num { display: none !important; }
             .card { font-size: 32px !important; border-width: 3px !important; }
-            
             #user-player { bottom: 110px !important; height: 100px !important; } 
-            
-            /* KART ARALIKLARI */
             #user-hand { padding-bottom: 0 !important; overflow-x: auto !important; justify-content: flex-start !important; padding-left: 20px; }
             .user-card { margin: 0 2px !important; flex-shrink: 0 !important; }
             .user-card:hover, .user-card:active { transform: translateY(-25px) scale(1.1) !important; z-index: 1000 !important; margin: 0 10px !important; }
-            
             #draw-pile-container { top: 42% !important; left: 15% !important; transform: translate(-50%, -50%) !important; }
             #discard-pile-container { left: 65% !important; top: 42% !important; }
-
             #center-area { top: 42% !important; width: 180px !important; height: 180px !important; }
             #color-indicator { width: 130px !important; height: 130px !important; font-size: 12px !important; }
             #direction-ring { width: 160px !important; height: 160px !important; }
             #pointer-tip { top: -25px !important; border-top-width: 25px !important; }
-            
             #draw-warning { bottom: 220px !important; font-size: 14px !important; padding: 8px 15px !important; }
             #uno-btn { bottom: 240px !important; right: 10px !important; width: 70px !important; height: 70px !important; }
-            
             #menu-buttons { flex-direction: column !important; gap: 15px !important; width: 100% !important; align-items: center !important; }
             .btn-main { width: 80% !important; margin: 5px 0 !important; font-size: 20px !important; }
         }
-
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; padding: 0; background: radial-gradient(circle at center, #388e3c 0%, #2e7d32 40%, #1b5e20 80%, #0a3d0a 100%); height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; color: white; }
-        body::before { content: ""; position: absolute; inset: 0; background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulance type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E"); pointer-events: none; z-index: -1; }
-        
         .screen { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s; }
         .hidden { display: none !important; opacity: 0; pointer-events: none; }
-
-        .modern-title-container { display: flex; gap: 10px; margin-bottom: 30px; animation: floatTitle 3s ease-in-out infinite; }
-        .title-card {
-            width: 80px; height: 110px; border-radius: 15px;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 80px; font-weight: 900; color: white;
-            text-shadow: 3px 3px 0px rgba(0,0,0,0.3);
-            border: 4px solid white;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-            transform: rotate(var(--r));
-        }
-        .t-red { background: linear-gradient(135deg, #ff5252, #b71c1c); --r: -10deg; }
-        .t-yellow { background: linear-gradient(135deg, #ffd740, #f57f17); --r: 5deg; }
-        .t-blue { background: linear-gradient(135deg, #448aff, #1565c0); --r: 10deg; }
-        @keyframes floatTitle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-
-        .subtitle { color: #ccc; font-size: 18px; margin-bottom: 30px; font-family: monospace; letter-spacing: 2px; }
-        
-        #menu-buttons { display: flex; flex-direction: row; justify-content: center; gap: 20px; }
-
-        .btn-main { padding: 15px 40px; font-size: 24px; background: linear-gradient(135deg, #fbc02d 0%, #f57f17 100%); border: 4px solid white; border-radius: 50px; font-weight: 900; cursor: pointer; color: #000; min-width: 200px; box-shadow: 0 10px 30px rgba(251, 192, 45, 0.4); transition: all 0.2s; }
-        .btn-main:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(251, 192, 45, 0.6); }
-        .btn-main:disabled { filter: grayscale(1); opacity: 0.6; cursor: not-allowed; transform: none; }
-        .btn-secondary { background: transparent; color: white; border: 3px solid white; box-shadow: none; }
-        .btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
-        .input-box { background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); padding: 15px; border-radius: 15px; color: white; font-size: 24px; text-align: center; margin-bottom: 20px; width: 250px; outline: none; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; }
-        
-        #game-stage { width: 100%; height: 100%; position: relative; perspective: 1200px; }
-        .player-area { position: absolute; transition: all 0.4s; display: flex; justify-content: center; align-items: center; flex-direction: column; }
-        .player-badge { position: absolute; background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 100%); width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; border-radius: 50%; font-size: 24px; border: 3px solid rgba(255,255,255,0.6); color: white; z-index: 20; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.7); transition: all 0.3s; }
-        
-        #opp-hand { display: flex; justify-content: center; margin-top: 10px; }
-        #opp-hand .bot-card-back { 
-            width: var(--card-w); height: var(--card-h); border-radius: 10px; 
-            background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 50%, #fbc02d 100%); 
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5); 
-            border: 3px solid white;
-            position: absolute;
-            top: 0;
-        }
-
-        .active-turn .player-badge { background: linear-gradient(135deg, #fbc02d 0%, #f57f17 100%); color: black; transform: scale(1.1); box-shadow: 0 0 30px #fbc02d; border-color: #fff; animation: badgePulse 1s infinite; }
-        .card { width: var(--card-w); height: var(--card-h); border-radius: 10px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; font-weight: 900; font-size: 32px; border: 5px solid white; position: relative; flex-shrink: 0; transition: all 0.2s; }
+        .title-card { width: 80px; height: 110px; border-radius: 15px; display: flex; justify-content: center; align-items: center; font-size: 80px; font-weight: 900; color: white; text-shadow: 3px 3px 0px rgba(0,0,0,0.3); border: 4px solid white; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+        .card { width: var(--card-w); height: var(--card-h); border-radius: 10px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; font-weight: 900; font-size: 32px; border: 5px solid white; position: relative; flex-shrink: 0; transition: all 0.2s; cursor: pointer; }
         .card-inner { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; position: relative; border-radius: 5px; overflow: hidden; }
         .small-num { position: absolute; font-size: 16px; font-weight: bold; }
         .tl { top: 4px; left: 5px; }
@@ -97,64 +44,29 @@
         .green .card-inner { background: linear-gradient(135deg, #69f0ae 0%, #00c853 100%); color: white; }
         .yellow .card-inner { background: linear-gradient(135deg, #ffd740 0%, #fbc02d 100%); color: #333; }
         .black .card-inner { background: linear-gradient(135deg, #424242 0%, #212121 100%); color: white; }
-        
         #draw-pile-container { position: absolute; top: 50%; left: 20%; transform: translate(-50%, -50%); width: var(--card-w); height: var(--card-h); pointer-events: auto; cursor: pointer; transition: all 0.2s; z-index: 100; }
-        
         #discard-pile-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: var(--card-w); height: var(--card-h); display: block; }
-        #discard-pile-container .card { position: absolute; top: 0; left: 0; transition: all 0.2s; }
-        
-        #top-player { top: 30px; left: 50%; transform: translateX(-50%); width: 100%; height: 120px; display: flex; justify-content: center; }
-        #top-player .player-badge { top: 10px; z-index: 60; }
-        
-        #user-player { bottom: 30px; left: 0; width: 100%; height: 160px; align-items: flex-end; z-index: 100; }
-        
-        #center-area { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 300px; display: flex; justify-content: center; align-items: center; pointer-events: none; }
-        #color-indicator { 
-            position: absolute; width: 220px; height: 220px; border-radius: 50%; 
-            border: 8px solid white; background: #333; transition: all 0.5s; 
-            z-index: -1; box-shadow: 0 0 60px rgba(0,0,0,0.8);
-            display: flex; justify-content: center; align-items: center;
-            color: white; font-weight: bold; font-size: 16px; text-shadow: 0 2px 4px black;
-            text-transform: uppercase; text-align: center; flex-direction: column;
-        }
-        
-        #direction-ring { position: absolute; width: 260px; height: 260px; border-radius: 50%; border: 5px dashed rgba(255,255,255,0.3); }
-        .spin-cw { animation: spin 36s linear infinite; }
-        .spin-ccw { animation: spin 36s linear infinite reverse; }
-        #pointer-tip-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transition: transform 0.6s; }
+        #color-indicator { position: absolute; width: 220px; height: 220px; border-radius: 50%; border: 8px solid white; background: #333; transition: all 0.5s; z-index: -1; box-shadow: 0 0 60px rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 16px; text-transform: uppercase; text-align: center; flex-direction: column; }
         #pointer-tip { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 35px solid #fbc02d; filter: drop-shadow(0 0 10px rgba(251,192,45,0.8)); }
-        @keyframes hueRotate { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
-        @keyframes unoPulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-
-        #chat-trigger-btn {
-            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
-            color: white; border-radius: 15px; padding: 5px 15px; font-size: 14px;
-            cursor: pointer; display: flex; align-items: center; gap: 5px;
-            pointer-events: auto; margin-top: 5px;
-        }
-        
-        #draw-warning.clickable { cursor: pointer; pointer-events: auto !important; transition: transform 0.2s; }
-        #draw-warning.clickable:active { transform: translateX(-50%) scale(0.95); }
+        #draw-warning { position: absolute; bottom: 200px; left: 50%; transform: translateX(-50%); background: #c62828; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; border: 3px solid white; white-space: nowrap; pointer-events: none; z-index: 900; }
+        #pass-btn { position: absolute; bottom: 150px; right: 20px; width: 100px; height: 40px; border-radius: 12px; font-weight: 900; display: none; z-index: 400; cursor: pointer; }
+        #uno-btn { position: absolute; bottom: 210px; right: 20px; width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #fbc02d 0%, #f57f17 100%); border: 5px solid white; color: black; font-weight: 900; font-size: 20px; cursor: pointer; display: none; z-index: 300; }
+        #chat-trigger-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 15px; padding: 5px 15px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 5px; pointer-events: auto; margin-top: 5px; }
+        .player-badge { position: absolute; background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 100%); width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; border-radius: 50%; font-size: 24px; border: 3px solid rgba(255,255,255,0.6); color: white; z-index: 20; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.7); transition: all 0.3s; }
+        .player-badge.clickable { cursor: pointer; box-shadow: 0 0 20px #ff5252; }
     </style>
 </head>
 <body>
 
 <div id="loading-overlay" class="screen"><div style="font-size: 24px;">Sunucuya Bağlanıyor...</div></div>
-
 <div style="position: fixed; top: 10px; left: 10px; z-index: 9000; display: flex; flex-direction: column; align-items: flex-start;">
     <div id="server-id-display" style="font-size: 12px; color: rgba(255,255,255,0.6);"></div>
     <button id="chat-trigger-btn" onclick="toggleChatInput()" class="hidden">💬 Sohbet</button>
 </div>
 
-<!-- MENU SCREEN -->
 <div id="menu-screen" class="screen hidden">
-    <div class="modern-title-container">
-        <div class="title-card t-red">U</div>
-        <div class="title-card t-yellow">N</div>
-        <div class="title-card t-blue">O</div>
-    </div>
+    <div class="modern-title-container"><div class="title-card t-red">U</div><div class="title-card t-yellow">N</div><div class="title-card t-blue">O</div></div>
     <div class="subtitle">ONLINE MULTIPLAYER</div>
-    
     <div id="menu-buttons">
         <button id="btn-create" class="btn-main" onclick="showCreateRoom()" disabled>ODA OLUŞTUR</button>
         <button id="btn-join" class="btn-main btn-secondary" onclick="showJoinRoom()" disabled>ODAYA KATIL</button>
@@ -174,14 +86,8 @@
     <div class="game-title" style="font-size: 50px;">LOBİ</div>
     <div class="subtitle" id="lobby-room-code">ODA: ----</div>
     <div class="lobby-info" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 20px; margin-bottom: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px;">
-        <div class="player-slot" id="p1-slot" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; margin: 5px 0; background: rgba(0,0,0,0.3); border-radius: 10px;">
-            <span>Oyuncu 1 (Host)</span>
-            <div class="status-dot" id="p1-status" style="width: 12px; height: 12px; border-radius: 50%; background: #444; margin-right: 10px; display: inline-block;"></div>
-        </div>
-        <div class="player-slot" id="p2-slot" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; margin: 5px 0; background: rgba(0,0,0,0.3); border-radius: 10px;">
-            <span id="p2-name">Bekleniyor...</span>
-            <div class="status-dot" id="p2-status" style="width: 12px; height: 12px; border-radius: 50%; background: #444; margin-right: 10px; display: inline-block;"></div>
-        </div>
+        <div class="player-slot" id="p1-slot" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; margin: 5px 0; background: rgba(0,0,0,0.3); border-radius: 10px;"><span>Oyuncu 1 (Host)</span><div class="status-dot" id="p1-status" style="width: 12px; height: 12px; border-radius: 50%; background: #444; margin-right: 10px; display: inline-block;"></div></div>
+        <div class="player-slot" id="p2-slot" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; margin: 5px 0; background: rgba(0,0,0,0.3); border-radius: 10px;"><span id="p2-name">Bekleniyor...</span><div class="status-dot" id="p2-status" style="width: 12px; height: 12px; border-radius: 50%; background: #444; margin-right: 10px; display: inline-block;"></div></div>
     </div>
     <div id="lobby-msg" style="color: #ffd740; margin-bottom: 20px; font-weight: bold; text-align: center;">Arkadaşının katılmasını bekle...</div>
     <button id="ready-btn" class="btn-main" onclick="toggleReady()" disabled>HAZIRIM</button>
@@ -200,38 +106,27 @@
 
 <div id="game-stage" class="hidden">
     <div id="draw-pile-container" onclick="tryDrawCard()">
-        <div class="card card-back" style="box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
-            <div class="card-inner" style="background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 50%, #fbc02d 100%);">
-                <div class="logo" style="font-size: 18px; font-style: italic; color: white; transform: rotate(-20deg); text-shadow: 2px 2px 4px rgba(0,0,0,0.7); font-weight: 900;">UNO</div>
-            </div>
-        </div>
+        <div class="card card-back"><div class="card-inner" style="background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 50%, #fbc02d 100%);"><div class="logo" style="font-size: 18px; font-style: italic; color: white; transform: rotate(-20deg); text-shadow: 2px 2px 4px rgba(0,0,0,0.7); font-weight: 900;">UNO</div></div></div>
     </div>
-    
     <div id="center-area">
         <div id="direction-ring"></div>
         <div id="pointer-tip-container"><div id="pointer-tip"></div></div>
-        <div id="color-indicator">
-            <div id="color-name-display"></div>
-            <div id="value-display" style="font-size: 24px; margin-top: 5px;"></div>
-        </div>
+        <div id="color-indicator"><div id="color-name-display"></div><div id="value-display" style="font-size: 24px; margin-top: 5px;"></div></div>
         <div id="discard-pile-container"></div>
     </div>
-    
     <div id="top-player" class="player-area">
         <div class="uno-badge" id="opp-uno-badge" style="position: absolute; background: #ff5252; color: white; font-weight: 900; padding: 5px 10px; border-radius: 10px; border: 2px solid white; top: 80px; left: 50%; transform: translateX(-50%); z-index: 200; display: none; box-shadow: 0 0 15px red; animation: unoPulse 0.8s infinite;">UNO!</div>
-        <div class="player-badge" id="opp-badge">0</div>
+        <div class="player-badge clickable" id="opp-badge">0</div>
         <div class="bot-hand" id="opp-hand"></div>
     </div>
-    
-    <div id="draw-warning" onclick="tryDrawCard()" style="position: absolute; bottom: 200px; left: 50%; transform: translateX(-50%); background: #c62828; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; border: 3px solid white; white-space: nowrap; pointer-events: none; z-index: 900;"></div>
-    
+    <div id="draw-warning"></div>
+    <button id="pass-btn" class="btn-main btn-secondary" onclick="endTurn()">PASS</button>
     <div id="user-player" class="player-area">
         <div class="uno-badge" id="my-uno-badge" style="position: absolute; background: #ff5252; color: white; font-weight: 900; padding: 5px 10px; border-radius: 10px; border: 2px solid white; top: -40px; left: 50%; transform: translateX(-50%); z-index: 200; display: none; box-shadow: 0 0 15px red; animation: unoPulse 0.8s infinite;">UNO!</div>
         <div id="user-hand" style="display: flex; justify-content: center; align-items: flex-end; height: 100%; width: 100%; padding: 0 20px;"></div>
     </div>
-
+    <button id="uno-btn" onclick="callUno()">UNO!</button>
     <div id="chat-display-area" style="position: fixed; top: 20%; left: 50%; transform: translateX(-50%); width: 90%; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; z-index: 8000;"></div>
-    
     <div id="chat-input-container" style="position: fixed; top: 40px; left: 10px; display: none; background: rgba(0,0,0,0.9); padding: 10px; border-radius: 10px; border: 1px solid white; z-index: 9001;">
         <div style="display:flex; gap:5px;">
             <input type="text" id="chat-input" placeholder="Mesaj..." maxlength="30" style="background: #333; border: 1px solid #555; color: white; padding: 5px; border-radius: 5px; width: 150px;">
@@ -241,18 +136,8 @@
     </div>
 </div>
 
-<button id="uno-btn" onclick="callUno()" style="position: absolute; bottom: 210px; right: 20px; width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #fbc02d 0%, #f57f17 100%); border: 5px solid white; color: black; font-weight: 900; font-size: 20px; cursor: pointer; display: none; z-index: 300;">UNO!</button>
-<div id="msg-overlay" style="position: fixed; top: 25%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); padding: 15px 40px; border-radius: 40px; color: white; font-size: 22px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 5000; border: 2px solid white; text-align: center; font-weight: bold;"></div>
-
-<div id="color-picker" style="position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 6000; display: none; justify-content: center; align-items: center; gap: 20px;">
-    <div class="cp-btn" style="width: 90px; height: 90px; border-radius: 20px; border: 4px solid white; cursor: pointer; transition: all 0.3s; position: relative; background:var(--red)" onclick="pickColor('red')"></div>
-    <div class="cp-btn" style="width: 90px; height: 90px; border-radius: 20px; border: 4px solid white; cursor: pointer; transition: all 0.3s; position: relative; background:var(--blue)" onclick="pickColor('blue')"></div>
-    <div class="cp-btn" style="width: 90px; height: 90px; border-radius: 20px; border: 4px solid white; cursor: pointer; transition: all 0.3s; position: relative; background:var(--green)" onclick="pickColor('green')"></div>
-    <div class="cp-btn" style="width: 90px; height: 90px; border-radius: 20px; border: 4px solid white; cursor: pointer; transition: all 0.3s; position: relative; background:var(--yellow)" onclick="pickColor('yellow')"></div>
-</div>
-
 <script>
-// --- BURAYI DEGISTIRIN: Kendi Firebase Config Bilgilerinizi Buraya Yapistirin ---
+// --- FIREBASE KONFİGURASYONUNU KENDİ PROJENE GÖRE GÜNCELLE ---
   const firebaseConfig = {
     apiKey: "AIzaSyCokrmiD0yG58lb5F2c2r_a2BwaQoWQmRQ",
     authDomain: "myuno-38ade.firebaseapp.com",
@@ -262,24 +147,22 @@
     appId: "1:727778671836:web:612fa29ffe505b829c4819",
     measurementId: "G-45HGXKNQFD"
   };
-// -------------------------------------------------------------------------------
-
 const app = firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth(app);
 const db = firebase.firestore(app);
 
-// Global States
+// Global state
 let currentUser = null;
 let currentRoomId = null;
 let gameUnsubscribe = null;
-let myPlayerIndex = -1; 
+let myPlayerIndex = -1;
 let isHost = false;
-let gameState = null; 
+let gameState = null;
 let lastChatCount = 0;
-let isDrawing = false; 
-let isAuthReady = false; 
-let localUnoPressed = false; // YEREL UNO HAFIZASI
+let isDrawing = false;
+let localUnoPressed = false;
 
+// audio
 const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
 function playSfx(t){
     if(audioCtx.state==='suspended')audioCtx.resume();
@@ -294,20 +177,13 @@ function playSfx(t){
 }
 
 const initAuth = async () => {
-    try {
-        await auth.signInAnonymously();
-    } catch (e) {
-        console.error("Auth Failed", e);
-        document.getElementById('loading-overlay').innerHTML = "<div>Bağlantı Hatası. Sayfayı yenileyin.</div>";
-    }
+    try { await auth.signInAnonymously(); } catch (e) { console.error("Auth Failed", e); document.getElementById('loading-overlay').innerHTML = "<div>Bağlantı Hatası. Sayfayı yenileyin.</div>"; }
 };
-
 initAuth();
 
 auth.onAuthStateChanged((user) => {
     if (user) {
         currentUser = user;
-        isAuthReady = true;
         document.getElementById('loading-overlay').classList.add('hidden');
         document.getElementById('menu-screen').classList.remove('hidden');
         document.getElementById('btn-create').disabled = false;
@@ -317,32 +193,7 @@ auth.onAuthStateChanged((user) => {
     }
 });
 
-function getGameRef(roomId) {
-    return db.collection('games').doc(roomId);
-}
-
-function showCreateRoom() {
-    if (!isAuthReady || !currentUser) return;
-    playSfx('click');
-    document.getElementById('menu-buttons').classList.add('hidden');
-    createGame();
-}
-
-function showJoinRoom() {
-    if (!isAuthReady || !currentUser) return;
-    playSfx('click');
-    document.getElementById('menu-buttons').classList.add('hidden');
-    document.getElementById('join-form').classList.remove('hidden');
-}
-
-function resetMenu() {
-    playSfx('click');
-    document.getElementById('menu-buttons').classList.remove('hidden');
-    document.getElementById('join-form').classList.add('hidden');
-    document.getElementById('join-error').innerText = '';
-    document.getElementById('room-code-input').value = '';
-}
-
+function getGameRef(roomId) { return db.collection('games').doc(roomId); }
 function generateRoomId() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let result = '';
@@ -354,20 +205,17 @@ async function createGame() {
     const roomId = generateRoomId();
     const gameRef = getGameRef(roomId);
     const initialData = {
-        status: 'waiting', 
+        status: 'waiting',
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        players: [{ uid: currentUser.uid, ready: false, hand: [], uno: false }],
-        deck: [], pile: [], turn: 0, direction: 1, curColor: '', curVal: '', winnerIndex: -1, 
-        rematch: { 0: false, 1: false }, chat: []
+        players: [{ uid: currentUser.uid, ready: false, hand: [], uno: false, justDrew: null }, null],
+        deck: [], pile: [], turn: 0, direction: 1, curColor: '', curVal: '', winnerIndex: -1,
+        rematch: { 0: false, 1: false }, chat: [],
+        penaltyStack: { count: 0, type: '' } // yeni: ceza zinciri
     };
     try {
         await gameRef.set(initialData);
-        enterLobby(roomId, 0); 
-    } catch (e) {
-        console.error(e);
-        document.getElementById('menu-buttons').classList.remove('hidden');
-        msg("Oda oluşturulamadı. Firebase Kurallarını Kontrol Et.", 4000);
-    }
+        enterLobby(roomId, 0);
+    } catch (e) { console.error(e); document.getElementById('menu-buttons').classList.remove('hidden'); msg("Oda oluşturulamadı. Firebase Kurallarını Kontrol Et.", 4000); }
 }
 
 async function joinRoom() {
@@ -381,13 +229,13 @@ async function joinRoom() {
         if (!doc.exists) { document.getElementById('join-error').innerText = "Oda bulunamadı."; return; }
         const data = doc.data();
         if (data.status !== 'waiting') { document.getElementById('join-error').innerText = "Oyun başlamış."; return; }
-        if (data.players.length >= 2) {
-            if(data.players.some(p=>p.uid===currentUser.uid)){ enterLobby(roomId, data.players.findIndex(p=>p.uid===currentUser.uid)); return; }
+        if (data.players.length >= 2 && data.players[1]) {
+            if (data.players.some(p=>p && p.uid===currentUser.uid)){ enterLobby(roomId, data.players.findIndex(p=>p && p.uid===currentUser.uid)); return; }
             document.getElementById('join-error').innerText = "Oda dolu."; return;
         }
-        const newPlayers = [...data.players, { uid: currentUser.uid, ready: false, hand: [], uno: false }];
+        const newPlayers = [ data.players[0], { uid: currentUser.uid, ready: false, hand: [], uno: false, justDrew: null } ];
         await gameRef.update({ players: newPlayers });
-        enterLobby(roomId, 1); 
+        enterLobby(roomId, 1);
     } catch (e) { document.getElementById('join-error').innerText = "Bağlantı hatası."; }
 }
 
@@ -398,8 +246,6 @@ function enterLobby(roomId, index) {
     document.getElementById('menu-screen').classList.add('hidden');
     document.getElementById('lobby-screen').classList.remove('hidden');
     document.getElementById('lobby-room-code').innerText = "ODA: " + roomId;
-    localUnoPressed = false;
-    
     gameUnsubscribe = getGameRef(roomId).onSnapshot(snapshot => {
         if (!snapshot.exists) { leaveRoom(false); return; }
         const data = snapshot.data();
@@ -448,35 +294,23 @@ async function initializeGameLogic() {
     const colors = ['red','blue','green','yellow'];
     const values = ['0','1','2','3','4','5','6','7','8','9','skip','reverse','draw2'];
     let deck = [];
-    
     colors.forEach(c => {
-        deck.push({c, v: '0', t:'n'}); 
+        deck.push({c, v: '0', t:'n'});
         const values = ['1','2','3','4','5','6','7','8','9','skip','reverse','draw2'];
-        values.forEach(v => {
-            deck.push({c, v, t:'n'}); 
-            deck.push({c, v, t:'n'}); 
-        });
+        values.forEach(v => { deck.push({c, v, t:'n'}); deck.push({c, v, t:'n'}); });
     });
-    
-    for(let i=0; i<4; i++) {
-        deck.push({c:'black', v:'W', t:'wild'});
-        deck.push({c:'black', v:'+4', t:'wild4'});
-    }
-    
-    deck.sort(() => Math.random() - 0.5);
-    
-    const p1Hand = []; const p2Hand = [];
-    for(let i=0; i<7; i++) { p1Hand.push(deck.pop()); p2Hand.push(deck.pop()); }
-    
+    for(let i=0;i<4;i++){ deck.push({c:'black', v:'W', t:'wild'}); deck.push({c:'black', v:'+4', t:'wild4'}); }
+    deck.sort(()=>Math.random()-0.5);
+    const p1Hand=[]; const p2Hand=[];
+    for(let i=0;i<7;i++){ p1Hand.push(deck.pop()); p2Hand.push(deck.pop()); }
     let firstCard;
-    do {
-        firstCard = deck.pop();
-    } while (firstCard.c === 'black' || firstCard.v === 'draw2' || firstCard.v === 'skip' || firstCard.v === 'reverse');
-    
+    do { firstCard = deck.pop(); } while (firstCard.c === 'black' || firstCard.v === 'draw2' || firstCard.v === 'skip' || firstCard.v === 'reverse');
+    // Oyuncu state'lerini güncelle (justDrew null, uno false)
     await getGameRef(currentRoomId).update({
         status: 'playing', deck: deck, pile: [firstCard],
-        players: [ { ...gameState.players[0], hand: p1Hand, ready: true, uno: false }, { ...gameState.players[1], hand: p2Hand, ready: true, uno: false } ],
-        turn: 0, curColor: firstCard.c, curVal: firstCard.v, direction: 1, winnerIndex: -1, rematch: { 0: false, 1: false }, chat: []
+        players: [ { ...gameState.players[0], hand: p1Hand, ready: true, uno: false, justDrew: null }, { ...gameState.players[1], hand: p2Hand, ready: true, uno: false, justDrew: null } ],
+        turn: 0, curColor: firstCard.c, curVal: firstCard.v, direction: 1, winnerIndex: -1, rematch: {0:false,1:false}, chat: [],
+        penaltyStack: { count: 0, type: '' }
     });
 }
 
@@ -500,25 +334,15 @@ function updateLobbyUI(data) {
 }
 
 function updateGameUI(data) {
-    const pile = data.pile;
+    const pile = data.pile || [];
     const container = document.getElementById('discard-pile-container');
     container.innerHTML = '';
-
     const visibleCards = pile.slice(Math.max(0, pile.length - 2));
     visibleCards.forEach((card, index) => {
-        const isTop = (index === visibleCards.length - 1); 
+        const isTop = (index === visibleCards.length - 1);
         const el = makeCard(card);
-        
-        if (!isTop) {
-             const offset = window.innerWidth <= 768 ? '-45px' : '-60px';
-             el.style.transform = `translate(${offset}, 0px) scale(1)`; 
-             el.style.zIndex = 5;
-             el.style.filter = 'brightness(0.95)';
-        } else {
-             el.style.transform = 'translate(0px, 0px)';
-             el.style.zIndex = 10;
-        }
-        
+        if (!isTop) { const offset = window.innerWidth <= 768 ? '-45px' : '-60px'; el.style.transform = `translate(${offset}, 0px) scale(1)`; el.style.zIndex = 5; el.style.filter = 'brightness(0.95)'; }
+        else { el.style.transform = 'translate(0px, 0px)'; el.style.zIndex = 10; }
         if (card.c === 'black' && isTop && data.curColor !== 'black') {
              el.className = `card ${data.curColor}`;
              let txt=card.v; if(txt==='W')txt='🌈'; else if(txt==='+4')txt='+4';
@@ -527,31 +351,33 @@ function updateGameUI(data) {
         container.appendChild(el);
     });
 
-    updateColor(data.curColor, data.curVal); 
+    updateColor(data.curColor, data.curVal);
     updateDirection(data);
     renderMyHand(data.players[myPlayerIndex].hand, data);
-    
     const oppIndex = myPlayerIndex === 0 ? 1 : 0;
-    renderOpponentHand(data.players[oppIndex].hand.length);
-    
-    const me = data.players[myPlayerIndex];
-    const opp = data.players[oppIndex];
+    renderOpponentHand((data.players[oppIndex]||{hand:[]}).hand.length);
+    const me = data.players[myPlayerIndex]||{};
+    const opp = data.players[oppIndex]||{};
     document.getElementById('my-uno-badge').style.display = me.uno ? 'block' : 'none';
     document.getElementById('opp-uno-badge').style.display = opp.uno ? 'block' : 'none';
-
     document.getElementById('user-player').classList.toggle('active-turn', data.turn === myPlayerIndex);
     document.getElementById('top-player').classList.toggle('active-turn', data.turn !== myPlayerIndex);
-    
+
     const warning = document.getElementById('draw-warning');
     warning.style.display = 'block';
-    warning.classList.remove('clickable'); 
+    warning.classList.remove('clickable');
+
+    // PASS butonu görünürlüğü: Eğer oyuncu aynı turda kart çekti ve oynayıp oynamamakta serbest bırakıldıysa göster
+    const myJustDrew = me.justDrew || null;
+    const showPass = (data.turn === myPlayerIndex) && (myJustDrew !== null);
+    document.getElementById('pass-btn').style.display = showPass ? 'block' : 'none';
 
     if (data.turn === myPlayerIndex) {
-        const canPlay = data.players[myPlayerIndex].hand.some(c => isValid(c, data.curColor, data.curVal));
+        const canPlay = data.players[myPlayerIndex].hand.some(c => isValid(c, data.curColor, data.curVal, data.players[myPlayerIndex].hand, data.penaltyStack));
         if (!canPlay) {
             warning.innerText = "KART ÇEK";
             warning.style.background = '#d32f2f';
-            warning.classList.add('clickable'); 
+            warning.classList.add('clickable');
         } else {
             warning.innerText = "SIRA SENDE";
             warning.style.background = '#00e676';
@@ -562,18 +388,31 @@ function updateGameUI(data) {
         warning.style.background = '#333';
         warning.style.color = 'white';
     }
-    
-    const isUnoPending = data.turn === myPlayerIndex && data.players[myPlayerIndex].hand.length === 2 && !data.players[myPlayerIndex].uno;
+
+    // UNO button logic: gösterim
+    const handSize = data.players[myPlayerIndex].hand.length;
+    const isUnoPending = (handSize === 1) && !data.players[myPlayerIndex].uno;
     document.getElementById('uno-btn').style.display = isUnoPending ? 'block' : 'none';
+
+    // Make opponent badge clickable for UNO-catch when it's opponent's turn to play and they have 1 card
+    const oppBadge = document.getElementById('opp-badge');
+    if (opp && opp.hand && opp.hand.length === 1 && data.turn !== myPlayerIndex) {
+        oppBadge.classList.add('clickable');
+        oppBadge.onclick = () => attemptCatchUno(oppIndex);
+    } else {
+        oppBadge.classList.remove('clickable');
+        oppBadge.onclick = null;
+    }
 }
 
 function renderMyHand(hand, data) {
     const container = document.getElementById('user-hand'); container.innerHTML = '';
+    hand = hand || [];
     hand.sort((a,b) => a.c === b.c ? String(a.v).localeCompare(String(b.v)) : a.c.localeCompare(b.c));
     hand.forEach((c, idx) => {
         const el = makeCard(c); el.classList.add('user-card');
         if (data.turn === myPlayerIndex) {
-             if (isValid(c, data.curColor, data.curVal)) { 
+             if (isValid(c, data.curColor, data.curVal, hand, data.penaltyStack)) { 
                  el.style.boxShadow = '0 0 15px 5px rgba(255, 255, 255, 0.5)'; 
                  el.style.borderColor = '#fbc02d'; 
              }
@@ -585,19 +424,19 @@ function renderMyHand(hand, data) {
 
 function renderOpponentHand(count) {
     const container = document.getElementById('opp-hand'); container.innerHTML = '';
-    const visualCount = Math.min(count, 3); 
-    for(let i=0; i<visualCount; i++) { 
-        const el = document.createElement('div'); 
-        el.className = 'bot-card-back'; 
+    const visualCount = Math.min(count, 3);
+    for(let i=0;i<visualCount;i++){
+        const el = document.createElement('div');
+        el.className = 'bot-card-back';
         el.style.transform = `translateY(-${i*3}px) translateX(${i*2}px)`;
         el.style.zIndex = i;
-        container.appendChild(el); 
+        container.appendChild(el);
     }
     document.getElementById('opp-badge').innerText = count;
 }
 
-function updateColor(c, v) { 
-    document.getElementById('color-indicator').style.background = {red:'var(--red)',blue:'var(--blue)',green:'var(--green)',yellow:'var(--yellow)',black:'#333'}[c]||'#333'; 
+function updateColor(c, v) {
+    document.getElementById('color-indicator').style.background = {red:'var(--red)',blue:'var(--blue)',green:'var(--green)',yellow:'var(--yellow)',black:'#333'}[c]||'#333';
     const nameMap = {red:'KIRMIZI', blue:'MAVİ', green:'YEŞİL', yellow:'SARI', black:'BELİRSİZ'};
     let valTxt = v;
     if(valTxt==='skip') valTxt='PAS';
@@ -616,136 +455,299 @@ function updateDirection(data) {
 
 function makeCard(c){
     const d=document.createElement('div'); d.className=`card ${c.c}`;
-    let txt=c.v; if(txt==='skip')txt='⊘'; if(txt==='reverse')txt='⇄'; if(txt==='draw2')txt='+2'; if(c.t.includes('wild'))txt='🌈'; if(c.t==='wild4')txt='+4';
+    let txt=c.v; if(txt==='skip')txt='⊘'; if(txt==='reverse')txt='⇄'; if(txt==='draw2')txt='+2'; if(c.t && c.t.includes('wild'))txt='🌈'; if(c.t==='wild4')txt='+4';
     d.innerHTML=`<div class="card-inner"><span class="small-num tl">${txt}</span><span>${txt}</span><span class="small-num br">${txt}</span></div>`; return d;
 }
 
-function isValid(card, curColor, curVal) { 
+/*
+  isValid(card, curColor, curVal, hand, penaltyStack)
+  - curColor, curVal = current game color/val
+  - hand = player's full hand (for +4 rule checking)
+  - penaltyStack: if penalty is active (count>0, type 'draw2' or 'draw4'), valid plays are only stacking of same type
+*/
+function isValid(card, curColor, curVal, hand = [], penaltyStack = {count:0,type:''}) {
+    // if penalty active: only stacking same penalty type allowed
+    if (penaltyStack && penaltyStack.count > 0) {
+        if (penaltyStack.type === 'draw2') {
+            // only draw2 (value 'draw2') can be played to stack or player must draw
+            return card.v === 'draw2';
+        } else if (penaltyStack.type === 'draw4') {
+            return card.t === 'wild4';
+        }
+    }
+
+    // Wild (W) can always be played
+    if (card.t === 'wild') return true;
+
+    // For +4 (wild4) — rule: only if player has no matching color card or same value card
+    if (card.t === 'wild4') {
+        // If player has any non-black card that matches curColor or curVal, they cannot legally play +4
+        const hasPlayable = (hand || []).some(h => {
+            if (!h) return false;
+            if (h.c === 'black') return false;
+            if (h.c === curColor) return true;
+            if (String(h.v) === String(curVal)) return true;
+            return false;
+        });
+        return !hasPlayable;
+    }
+
+    // Normal rules: same color or same value or black
     if (card.c === 'black') return true;
     if (card.c === curColor) return true;
     if (String(card.v) === String(curVal)) return true;
-    return false; 
+    return false;
 }
 
-let pendingCard = null; 
+let pendingCard = null; // used for wild color selection
 async function playCard(c, idx) {
-    if (gameState.turn !== myPlayerIndex || !currentUser) return;
-    if (!isValid(c, gameState.curColor, gameState.curVal)) { msg("Geçersiz Kart!", 1000); return; }
-    playSfx('play');
-    if (c.c === 'black') { 
-        pendingCard = { card: c, idx: idx }; 
-        document.getElementById('color-picker').style.display = 'flex'; 
-        return; 
+    if (!gameState || gameState.turn !== myPlayerIndex || !currentUser) return;
+    // if penalty stack active: only certain plays allowed
+    if (gameState.penaltyStack && gameState.penaltyStack.count > 0) {
+        const allowed = isValid(c, gameState.curColor, gameState.curVal, gameState.players[myPlayerIndex].hand, gameState.penaltyStack);
+        if (!allowed) { msg("Bu durumda önce ceza çekmelisin veya uygun kart oynamalısın.", 1500); return; }
     }
+    if (!isValid(c, gameState.curColor, gameState.curVal, gameState.players[myPlayerIndex].hand, gameState.penaltyStack)) { msg("Geçersiz Kart!", 1000); return; }
+    playSfx('play');
+
+    // If wild (W) -> immediate color choose (handled inline for W)
+    if (c.t === 'wild' || c.t === 'wild4') {
+        pendingCard = { card: c, idx: idx };
+        document.getElementById('color-picker').style.display = 'flex';
+        return;
+    }
+
+    // Normal card play
     await executeMove(c, idx, c.c);
 }
 
+// Color picker logic
 async function pickColor(color) {
     document.getElementById('color-picker').style.display = 'none';
-    if (pendingCard) { await executeMove(pendingCard.card, pendingCard.idx, color); pendingCard = null; }
+    if (pendingCard) {
+        await executeMove(pendingCard.card, pendingCard.idx, color);
+        pendingCard = null;
+    }
 }
 
+/*
+ executeMove(card, idx, nextColor)
+ - handles all special cards and updates gameState
+ - supports penalty stacking (+2 and +4) and two-player reverse handling
+*/
 async function executeMove(card, idx, nextColor) {
-    const myHand = [...gameState.players[myPlayerIndex].hand]; myHand.splice(idx, 1); 
-    let nextDeck = [...gameState.deck];
-    let nextPlayers = [...gameState.players];
-    
-    let penalty = false;
-    if (myHand.length === 0) {
-        const serverUno = gameState.players[myPlayerIndex].uno;
-        if (!serverUno && !localUnoPressed) {
-            penalty = true;
-            msg("UNO demediğin için +2 Ceza yedin!", 3000);
-            for(let i=0; i<2; i++) { if (nextDeck.length > 0) myHand.push(nextDeck.pop()); }
+    if (!gameState) return;
+    const playerCount = (gameState.players || []).filter(Boolean).length;
+    const myHand = [...gameState.players[myPlayerIndex].hand];
+    // remove card from hand by index — but ensure consistency by matching object if needed
+    const removed = myHand.splice(idx,1);
+    const nextDeck = [...gameState.deck];
+    const nextPlayers = JSON.parse(JSON.stringify(gameState.players)); // deep copy
+    const penalty = gameState.penaltyStack || {count:0,type:''};
+
+    // If there is a penaltyStack active and player played matching penalty card -> stack it
+    if (penalty.count > 0) {
+        if (penalty.type === 'draw2' && card.v === 'draw2') {
+            // add to stack
+            const newCount = penalty.count + 2;
+            await getGameRef(currentRoomId).update({
+                pile: firebase.firestore.FieldValue.arrayUnion(card),
+                players: nextPlayers,
+                deck: nextDeck,
+                penaltyStack: { count: newCount, type: 'draw2' }
+            });
+            return;
         }
-        nextPlayers[myPlayerIndex].uno = false;
-        localUnoPressed = false; 
+        if (penalty.type === 'draw4' && card.t === 'wild4') {
+            const newCount = penalty.count + 4;
+            await getGameRef(currentRoomId).update({
+                pile: firebase.firestore.FieldValue.arrayUnion(card),
+                players: nextPlayers,
+                deck: nextDeck,
+                penaltyStack: { count: newCount, type: 'draw4' }
+            });
+            return;
+        }
+        // If they could not stack, they should draw — but execution of draw happens if they choose not to play a stacking card.
     }
-    
-    // EĞER ELDEKİ KART SAYISI 1'DEN FAZLA İSE UNO DURUMUNU İPTAL ET
-    if (myHand.length > 1) {
-        nextPlayers[myPlayerIndex].uno = false;
-    }
-    
+
+    // Normal card effects
     let nextDirection = gameState.direction;
     let skipTurn = false; let cardsToDraw = 0;
-    
-    if (card.v === 'skip') { skipTurn = true; msg("Pas!", 1500); } 
-    else if (card.v === 'reverse') { skipTurn = true; msg("Yön!", 1500); nextDirection *= -1; } 
-    else if (card.v === 'draw2') { skipTurn = true; cardsToDraw = 2; msg("Rakip +2", 1500); } 
-    else if (card.t === 'wild4') { skipTurn = true; cardsToDraw = 4; msg("Rakip +4", 1500); }
-    
-    if (cardsToDraw > 0) {
-        const oppIndex = (myPlayerIndex + 1) % 2;
-        for(let i=0; i<cardsToDraw; i++) { 
-            if (nextDeck.length > 0) nextPlayers[oppIndex].hand.push(nextDeck.pop()); 
-        }
-        // RAKİP CEZA YEDİYSE UNO DURUMU İPTAL
-        nextPlayers[oppIndex].uno = false;
+    if (card.v === 'skip') { skipTurn = true; msg("Pas!",1500); }
+    else if (card.v === 'reverse') {
+        // In 2-player game, reverse acts like skip (doesn't truly reverse)
+        if (playerCount === 2) { skipTurn = true; msg("Pas (Reverse iki kişide skip gibi)",1500); }
+        else { nextDirection *= -1; msg("Yön!",1500); }
+    } else if (card.v === 'draw2') { skipTurn = true; cardsToDraw = 2; msg("Rakip +2",1500); }
+    else if (card.t === 'wild4') { skipTurn = true; cardsToDraw = 4; msg("Rakip +4",1500); }
+
+    // If playing wild4 and penaltyStack currently 0 but opponent had legal playable cards -> server will allow but note: enforcement done in isValid
+    // Apply stacking: if you play a draw2 or wild4 while no active stack, start stack
+    if (cardsToDraw > 0 && (gameState.penaltyStack && gameState.penaltyStack.count === 0)) {
+        // start a new penalty stack if opponent would be penalized
+        await getGameRef(currentRoomId).update({
+            pile: firebase.firestore.FieldValue.arrayUnion(card),
+            players: (() => { nextPlayers[myPlayerIndex].hand = myHand; return nextPlayers; })(),
+            deck: nextDeck,
+            penaltyStack: { count: cardsToDraw, type: (card.t === 'wild4' ? 'draw4' : 'draw2') },
+            curColor: (card.c === 'black' ? nextColor : card.c),
+            curVal: (card.c === 'black' ? (card.t==='wild4'?'+4':'W') : card.v),
+            direction: nextDirection
+        });
+        return;
     }
-    nextPlayers[myPlayerIndex].hand = myHand; 
-    
+
+    // If there is already a penaltyStack and player played a non-stacking card (shouldn't normally happen due to isValid), then handle accordingly
+    if (penalty.count > 0 && cardsToDraw === 0) {
+        // Not stacking — treat as invalid but we'll let DB stay consistent
+    }
+
+    // Apply card to pile and clear penalty stack if not stacking (normal moves)
+    nextPlayers[myPlayerIndex].hand = myHand;
+    // Reset justDrew for current player, since they played
+    nextPlayers[myPlayerIndex].justDrew = null;
+
+    // If card causes opponent to draw now (no stacking system active)
+    if (cardsToDraw > 0 && (gameState.penaltyStack && gameState.penaltyStack.count === 0)) {
+        // handled above
+    } else if (gameState.penaltyStack && gameState.penaltyStack.count > 0 && ! ( (gameState.penaltyStack.type === 'draw2' && card.v === 'draw2') || (gameState.penaltyStack.type === 'draw4' && card.t === 'wild4') )) {
+        // Player failed to stack: they must draw the penalty and skip
+        const amount = gameState.penaltyStack.count;
+        const oppIndex = myPlayerIndex; // current player draws?
+        for (let i=0;i<amount;i++){ if (nextDeck.length>0) nextPlayers[myPlayerIndex].hand.push(nextDeck.pop()); }
+        // reset penalty
+        await getGameRef(currentRoomId).update({
+            pile: firebase.firestore.FieldValue.arrayUnion(card),
+            players: nextPlayers,
+            deck: nextDeck,
+            penaltyStack: { count: 0, type: '' }
+        });
+        // After drawing penalty, game proceeds: skip their turn (they used turn to draw?) We'll pass turn to next
+        let nextTurn = (gameState.turn + gameState.direction + 2) % 2;
+        if (skipTurn) nextTurn = (nextTurn + gameState.direction + 2) % 2;
+        await getGameRef(currentRoomId).update({ turn: nextTurn });
+        return;
+    }
+
+    // default nextTurn calculation
     let nextTurn = (gameState.turn + nextDirection + 2) % 2;
     if (skipTurn) nextTurn = (nextTurn + nextDirection + 2) % 2;
-    
-    let status = 'playing'; let winnerIndex = -1;
-    if (myHand.length === 0 && !penalty) { status = 'finished'; winnerIndex = myPlayerIndex; }
-    
-    let finalVal = card.v;
-    if(card.c === 'black') finalVal = 'wild_reset'; 
 
-    await getGameRef(currentRoomId).update({ 
-        pile: firebase.firestore.FieldValue.arrayUnion(card), 
-        players: nextPlayers, 
-        turn: nextTurn, 
-        curColor: nextColor,
-        curVal: finalVal, 
-        deck: nextDeck, 
-        status: status, 
-        winnerIndex: winnerIndex, 
-        direction: nextDirection 
+    // Determine winner
+    let status = 'playing'; let winnerIndex = -1;
+    if (nextPlayers[myPlayerIndex].hand.length === 0) { status = 'finished'; winnerIndex = myPlayerIndex; }
+
+    // Final color and val
+    let finalVal = card.v;
+    let finalColor = (card.c === 'black') ? nextColor : card.c;
+
+    // Reset penaltyStack if none started
+    const newPenalty = (gameState.penaltyStack && gameState.penaltyStack.count>0) ? gameState.penaltyStack : {count:0,type:''};
+    // If this card started a penaltyStack we've already handled above and returned
+
+    // Save move
+    await getGameRef(currentRoomId).update({
+        pile: firebase.firestore.FieldValue.arrayUnion(card),
+        players: nextPlayers,
+        turn: nextTurn,
+        curColor: finalColor,
+        curVal: finalVal,
+        deck: nextDeck,
+        status: status,
+        winnerIndex: winnerIndex,
+        direction: nextDirection,
+        penaltyStack: newPenalty
     });
 }
 
 async function tryDrawCard() {
     if (gameState.turn !== myPlayerIndex || !currentUser || isDrawing) return;
-    if (gameState.players[myPlayerIndex].hand.some(c => isValid(c, gameState.curColor, gameState.curVal))) { msg("Oyna!", 1000); return; }
-    
     isDrawing = true; playSfx('draw');
-    localUnoPressed = false; 
-    
-    let nextDeck = [...gameState.deck]; let nextPlayers = [...gameState.players]; let nextTurn = gameState.turn;
+    localUnoPressed = false;
+
+    let nextDeck = [...gameState.deck]; let nextPlayers = JSON.parse(JSON.stringify(gameState.players)); let nextTurn = gameState.turn;
+    // If penalty stack active: player must draw penalty unless can stack (handled in playCard). Here, if they choose to draw, they draw penalty.
+    if (gameState.penaltyStack && gameState.penaltyStack.count > 0) {
+        const amount = gameState.penaltyStack.count;
+        for (let i=0;i<amount;i++){ if (nextDeck.length>0) nextPlayers[myPlayerIndex].hand.push(nextDeck.pop()); }
+        nextPlayers[myPlayerIndex].justDrew = null;
+        // reset penaltyStack
+        await getGameRef(currentRoomId).update({ deck: nextDeck, players: nextPlayers, penaltyStack: {count:0,type:''}, turn: (gameState.turn + gameState.direction + 2) % 2 });
+        isDrawing = false; return;
+    }
+
     if (nextDeck.length === 0) {
         let oldPile = [...gameState.pile]; if (oldPile.length <= 1) { isDrawing=false; return; }
-        const top = oldPile.pop(); const newDeck = oldPile.sort(() => Math.random() - 0.5);
+        const top = oldPile.pop();
+        const newDeck = oldPile.sort(() => Math.random() - 0.5);
         await getGameRef(currentRoomId).update({ pile: [top], deck: newDeck }); nextDeck = newDeck;
     }
-    const card = nextDeck.pop(); 
+    const card = nextDeck.pop();
     nextPlayers[myPlayerIndex].hand.push(card);
-    
-    // KART ÇEKİNCE UNO DURUMUNU İPTAL ET
+    // Mark justDrew so UI can show PASS button and allow the player to play the just drawn card or pass
+    nextPlayers[myPlayerIndex].justDrew = card;
+    // DON'T auto-advance turn if card is playable — allow player to choose to play it
+    // If card is not playable, advance the turn
+    const canPlay = isValid(card, gameState.curColor, gameState.curVal, nextPlayers[myPlayerIndex].hand, gameState.penaltyStack);
+    if (!canPlay) {
+        nextTurn = (gameState.turn + gameState.direction + 2) % 2;
+        nextPlayers[myPlayerIndex].justDrew = null;
+        msg("Sıra Rakipte", 1500);
+    } else {
+        msg("Oynayabilirsin veya PASS ile sırayı geçebilirsin", 2500);
+        // keep turn same; player may play drawn card (it's in hand)
+    }
+
+    // Clear UNO when drawing
     nextPlayers[myPlayerIndex].uno = false;
-    
-    if (!isValid(card, gameState.curColor, gameState.curVal)) { 
-        nextTurn = (gameState.turn + gameState.direction + 2) % 2; 
-        msg("Sıra Rakipte", 1500); 
-    } else msg("Oynayabilirsin", 1500);
-    
+
     await getGameRef(currentRoomId).update({ deck: nextDeck, players: nextPlayers, turn: nextTurn });
     isDrawing = false;
 }
 
+async function endTurn() {
+    // Player chooses to pass after drawing a playable card
+    if (!gameState || gameState.turn !== myPlayerIndex) return;
+    const nextPlayers = JSON.parse(JSON.stringify(gameState.players));
+    // clear justDrew
+    nextPlayers[myPlayerIndex].justDrew = null;
+    // advance turn
+    const nextTurn = (gameState.turn + gameState.direction + 2) % 2;
+    await getGameRef(currentRoomId).update({ players: nextPlayers, turn: nextTurn });
+}
+
 async function callUno() {
     if (!currentUser) return; playSfx('uno');
-    localUnoPressed = true; 
-    const players = [...gameState.players]; players[myPlayerIndex].uno = true;
-    await getGameRef(currentRoomId).update({ players: players }); msg("UNO!", 2000); document.getElementById('uno-btn').style.display = 'none';
+    localUnoPressed = true;
+    const players = JSON.parse(JSON.stringify(gameState.players));
+    players[myPlayerIndex].uno = true;
+    await getGameRef(currentRoomId).update({ players: players });
+    msg("UNO!", 2000);
+}
+
+async function attemptCatchUno(targetIndex) {
+    if (!gameState) return;
+    const target = gameState.players[targetIndex];
+    if (!target) return;
+    // Can only catch if target has 1 card (and hasn't flagged UNO)
+    if (target.hand.length === 1 && !target.uno) {
+        // Give them +2
+        const nextPlayers = JSON.parse(JSON.stringify(gameState.players));
+        let nextDeck = [...gameState.deck];
+        for (let i=0;i<2;i++){ if (nextDeck.length>0) nextPlayers[targetIndex].hand.push(nextDeck.pop()); }
+        nextPlayers[targetIndex].uno = false;
+        await getGameRef(currentRoomId).update({ players: nextPlayers, deck: nextDeck });
+        msg("UNO yakalandı! +2 ceza verildi.", 3000);
+    } else {
+        msg("Yakalanacak UNO durumu yok.", 1500);
+    }
 }
 
 function msg(m,t=2000){ const el=document.getElementById('msg-overlay'); el.innerText=m; el.style.opacity=1; setTimeout(()=>{el.style.opacity=0;},t); }
 
 function showResult(data) {
-    document.getElementById('result-screen').classList.remove('hidden'); document.getElementById('game-stage').classList.add('hidden'); document.getElementById('chat-display-area').innerHTML = ''; 
+    document.getElementById('result-screen').classList.remove('hidden'); document.getElementById('game-stage').classList.add('hidden'); document.getElementById('chat-display-area').innerHTML = '';
     const isWin = data.winnerIndex === myPlayerIndex;
     document.getElementById('result-title').innerText = isWin ? "KAZANDIN!" : "KAYBETTİN!";
     document.getElementById('result-title').style.color = isWin ? '#00e676' : '#ff5252';
@@ -760,14 +762,14 @@ function showResult(data) {
 
 async function requestRematch() { await getGameRef(currentRoomId).update({ [`rematch.${myPlayerIndex}`]: true }); }
 
-function toggleChatInput() { 
-    const i = document.getElementById('chat-input-container'); 
-    i.style.display = i.style.display === 'none' ? 'block' : 'none'; 
-    if(i.style.display === 'block') document.getElementById('chat-input').focus(); 
+function toggleChatInput() {
+    const i = document.getElementById('chat-input-container');
+    i.style.display = i.style.display === 'none' ? 'block' : 'none';
+    if(i.style.display === 'block') document.getElementById('chat-input').focus();
 }
 async function sendChat() {
     const input = document.getElementById('chat-input'); const txt = input.value.trim(); if (!txt) return; input.value = '';
-    toggleChatInput(); 
+    toggleChatInput();
     await getGameRef(currentRoomId).update({ chat: firebase.firestore.FieldValue.arrayUnion({ sender: myPlayerIndex === 0 ? 'P1' : 'P2', text: txt }) });
 }
 function handleChatUpdates(chatArray) {
@@ -777,10 +779,21 @@ function handleChatUpdates(chatArray) {
 function createToast(sender, text) {
     const container = document.getElementById('chat-display-area'); const el = document.createElement('div');
     const isMe = (sender === (myPlayerIndex === 0 ? 'P1' : 'P2'));
-    el.innerHTML = `<strong>${isMe?'Ben':'Rakip'}:</strong> ${text}`;
-    el.style.cssText = `border: 2px solid ${isMe?'#00e676':'#ff5252'}; background:rgba(0,0,0,0.85); padding:8px 20px; border-radius:25px; color:white; text-align:center; box-shadow: 0 4px 10px black;`;
+    el.style.cssText = `border: 2px solid ${isMe?'#00e676':'#ff5252'}; background:rgba(0,0,0,0.85); padding:8px 20px; border-radius:25px; color:white; text-align:center; box-shadow: 0 4px 10px black; margin-top: 5px;`;
+    el.innerHTML = `<strong>${isMe?'Ben':'Rakip'}:</strong> <span class="chat-text"></span>`;
+    el.querySelector('.chat-text').innerText = text;
     container.appendChild(el); setTimeout(() => el.remove(), 4000);
 }
+
 </script>
+
+<!-- COLOR PICKER -->
+<div id="color-picker" style="position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 6000; display: none; justify-content: center; align-items: center; gap: 20px;">
+    <div class="cp-btn" style="width: 90px; height: 90px; border-radius: 20px; border: 4px solid white; cursor: pointer; transition: all 0.3s; position: relative; background:var(--red)" onclick="pickColor('red')"></div>
+    <div class="cp-btn" style="width: 90px; height: 90px; border-radius: 20px; border: 4px solid white; cursor: pointer; transition: all 0.3s; position: relative; background:var(--blue)" onclick="pickColor('blue')"></div>
+    <div class="cp-btn" style="width: 90px; height: 90px; border-radius: 20px; border: 4px solid white; cursor: pointer; transition: all 0.3s; position: relative; background:var(--green)" onclick="pickColor('green')"></div>
+    <div class="cp-btn" style="width: 90px; height: 90px; border-radius: 20px; border: 4px solid white; cursor: pointer; transition: all 0.3s; position: relative; background:var(--yellow)" onclick="pickColor('yellow')"></div>
+</div>
+
 </body>
 </html>
