@@ -20,19 +20,17 @@
             /* MOBİL DÜZENLEMELERİ */
             #user-player { bottom: 110px !important; height: 100px !important; } 
             
-            /* KART ARALIKLARI DÜZELTİLDİ: Artık sayılar görünecek */
+            /* KART ARALIKLARI */
             #user-hand { padding-bottom: 0 !important; overflow-x: auto !important; justify-content: flex-start !important; padding-left: 20px; }
-            /* Kartlar birbirine yapışık değil, 2px boşluklu */
             .user-card { margin: 0 2px !important; flex-shrink: 0 !important; }
-            
-            /* Tıklayınca veya üzerine gelince yukarı çıkma efekti */
             .user-card:hover, .user-card:active { transform: translateY(-25px) scale(1.1) !important; z-index: 1000 !important; margin: 0 10px !important; }
             
+            /* Deste ve Yerleşimi */
             #draw-pile-container { top: 42% !important; left: 15% !important; transform: translate(-50%, -50%) !important; }
             #discard-pile-container { left: 65% !important; top: 42% !important; }
 
             #center-area { top: 42% !important; width: 180px !important; height: 180px !important; }
-            #color-indicator { width: 130px !important; height: 130px !important; }
+            #color-indicator { width: 130px !important; height: 130px !important; font-size: 12px !important; }
             #direction-ring { width: 160px !important; height: 160px !important; }
             #pointer-tip { top: -25px !important; border-top-width: 25px !important; }
             
@@ -112,8 +110,18 @@
         #top-player .player-badge { top: 10px; z-index: 60; }
         
         #user-player { bottom: 30px; left: 0; width: 100%; height: 160px; align-items: flex-end; z-index: 100; }
+        
+        /* Renk Göstergesi ve Metni */
         #center-area { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 300px; display: flex; justify-content: center; align-items: center; pointer-events: none; }
-        #color-indicator { position: absolute; width: 220px; height: 220px; border-radius: 50%; border: 8px solid white; background: #333; transition: all 0.5s; z-index: -1; box-shadow: 0 0 60px rgba(0,0,0,0.8); }
+        #color-indicator { 
+            position: absolute; width: 220px; height: 220px; border-radius: 50%; 
+            border: 8px solid white; background: #333; transition: all 0.5s; 
+            z-index: -1; box-shadow: 0 0 60px rgba(0,0,0,0.8);
+            display: flex; justify-content: center; align-items: center;
+            color: white; font-weight: bold; font-size: 16px; text-shadow: 0 2px 4px black;
+            text-transform: uppercase; text-align: center; flex-direction: column;
+        }
+        
         #direction-ring { position: absolute; width: 260px; height: 260px; border-radius: 50%; border: 5px dashed rgba(255,255,255,0.3); }
         .spin-cw { animation: spin 36s linear infinite; }
         .spin-ccw { animation: spin 36s linear infinite reverse; }
@@ -142,6 +150,7 @@
     <button id="chat-trigger-btn" onclick="toggleChatInput()" class="hidden">💬 Sohbet</button>
 </div>
 
+<!-- MENU SCREEN -->
 <div id="menu-screen" class="screen hidden">
     <div class="modern-title-container">
         <div class="title-card t-red">U</div>
@@ -205,7 +214,10 @@
     <div id="center-area">
         <div id="direction-ring"></div>
         <div id="pointer-tip-container"><div id="pointer-tip"></div></div>
-        <div id="color-indicator"></div>
+        <div id="color-indicator">
+            <div id="color-name-display"></div>
+            <div id="value-display" style="font-size: 24px; margin-top: 5px;"></div>
+        </div>
         <div id="discard-pile-container"></div>
     </div>
     
@@ -435,15 +447,35 @@ function leaveRoom() {
 }
 
 async function initializeGameLogic() {
+    // STANDART 108 KARTLIK UNO DESTESİ
     const colors = ['red','blue','green','yellow'];
-    const values = ['0','1','2','3','4','5','6','7','8','9','skip','reverse','draw2'];
+    // 0'dan 1 tane, diğerlerinden 2 şer tane
     let deck = [];
-    colors.forEach(c => { values.forEach(v => { deck.push({c, v, t:'n'}); if(v!=='0') deck.push({c, v, t:'n'}); }); });
-    for(let i=0; i<4; i++) { deck.push({c:'black', v:'W', t:'wild'}); deck.push({c:'black', v:'+4', t:'wild4'}); }
+    
+    colors.forEach(c => {
+        deck.push({c, v: '0', t:'n'}); // 1 tane 0
+        const values = ['1','2','3','4','5','6','7','8','9','skip','reverse','draw2'];
+        values.forEach(v => {
+            deck.push({c, v, t:'n'}); // 1. kopya
+            deck.push({c, v, t:'n'}); // 2. kopya
+        });
+    });
+    
+    // 4 Wild, 4 Wild Draw 4
+    for(let i=0; i<4; i++) {
+        deck.push({c:'black', v:'W', t:'wild'});
+        deck.push({c:'black', v:'+4', t:'wild4'});
+    }
+    
     deck.sort(() => Math.random() - 0.5);
+    
     const p1Hand = []; const p2Hand = [];
     for(let i=0; i<7; i++) { p1Hand.push(deck.pop()); p2Hand.push(deck.pop()); }
-    let firstCard; do { firstCard = deck.pop(); } while (firstCard.c === 'black' || firstCard.v === 'draw2' || firstCard.v === 'skip' || firstCard.v === 'reverse');
+    
+    let firstCard;
+    do {
+        firstCard = deck.pop();
+    } while (firstCard.c === 'black' || firstCard.v === 'draw2' || firstCard.v === 'skip' || firstCard.v === 'reverse');
     
     await getGameRef(currentRoomId).update({
         status: 'playing', deck: deck, pile: [firstCard],
@@ -491,6 +523,7 @@ function updateGameUI(data) {
              el.style.zIndex = 10;
         }
         
+        // Joker kartı ise ve renk seçilmişse, görsel olarak o renge bürünsün
         if (card.c === 'black' && isTop && data.curColor !== 'black') {
              el.className = `card ${data.curColor}`;
              let txt=card.v; if(txt==='W')txt='🌈'; else if(txt==='+4')txt='+4';
@@ -499,7 +532,7 @@ function updateGameUI(data) {
         container.appendChild(el);
     });
 
-    updateColor(data.curColor); 
+    updateColor(data.curColor, data.curVal); 
     updateDirection(data);
     renderMyHand(data.players[myPlayerIndex].hand, data);
     
@@ -519,7 +552,10 @@ function updateGameUI(data) {
     warning.classList.remove('clickable'); 
 
     if (data.turn === myPlayerIndex) {
-        if (!data.players[myPlayerIndex].hand.some(c => isValid(c, data.curColor, data.curVal))) {
+        // Geçerli kartı var mı kontrol et
+        const canPlay = data.players[myPlayerIndex].hand.some(c => isValid(c, data.curColor, data.curVal));
+        
+        if (!canPlay) {
             warning.innerText = "KART ÇEK";
             warning.style.background = '#d32f2f';
             warning.classList.add('clickable'); 
@@ -540,11 +576,16 @@ function updateGameUI(data) {
 
 function renderMyHand(hand, data) {
     const container = document.getElementById('user-hand'); container.innerHTML = '';
-    hand.sort((a,b) => a.c === b.c ? a.v.localeCompare(b.v) : a.c.localeCompare(b.c));
+    // Kartları renge göre, sonra sayıya göre sırala
+    hand.sort((a,b) => a.c === b.c ? String(a.v).localeCompare(String(b.v)) : a.c.localeCompare(b.c));
+    
     hand.forEach((c, idx) => {
         const el = makeCard(c); el.classList.add('user-card');
         if (data.turn === myPlayerIndex) {
-             if (isValid(c, data.curColor, data.curVal)) { el.style.boxShadow = '0 0 15px 5px rgba(255, 255, 255, 0.5)'; el.style.borderColor = '#fbc02d'; }
+             if (isValid(c, data.curColor, data.curVal)) { 
+                 el.style.boxShadow = '0 0 15px 5px rgba(255, 255, 255, 0.5)'; 
+                 el.style.borderColor = '#fbc02d'; 
+             }
              el.onclick = () => playCard(c, idx);
         } else { el.style.cursor = 'default'; }
         container.appendChild(el);
@@ -564,7 +605,22 @@ function renderOpponentHand(count) {
     document.getElementById('opp-badge').innerText = count;
 }
 
-function updateColor(c) { document.getElementById('color-indicator').style.background = {red:'var(--red)',blue:'var(--blue)',green:'var(--green)',yellow:'var(--yellow)',black:'#333'}[c]||'#333'; }
+function updateColor(c, v) { 
+    document.getElementById('color-indicator').style.background = {red:'var(--red)',blue:'var(--blue)',green:'var(--green)',yellow:'var(--yellow)',black:'#333'}[c]||'#333'; 
+    
+    // ORTAYA METİN YAZMA (DEBUG & GÖRSEL TEYİT)
+    const nameMap = {red:'KIRMIZI', blue:'MAVİ', green:'YEŞİL', yellow:'SARI', black:'BELİRSİZ'};
+    let valTxt = v;
+    if(valTxt==='skip') valTxt='PAS';
+    if(valTxt==='reverse') valTxt='YÖN';
+    if(valTxt==='draw2') valTxt='+2';
+    if(valTxt==='W') valTxt='JOKER';
+    if(valTxt==='+4') valTxt='+4';
+    
+    document.getElementById('color-name-display').innerText = nameMap[c] || '';
+    document.getElementById('value-display').innerText = valTxt;
+}
+
 function updateDirection(data) {
     const r = document.getElementById('direction-ring'); r.classList.toggle('spin-cw', data.direction === 1); r.classList.toggle('spin-ccw', data.direction === -1);
     document.getElementById('pointer-tip-container').style.transform = `rotate(${data.turn === myPlayerIndex ? 180 : 0}deg)`;
@@ -576,7 +632,20 @@ function makeCard(c){
     d.innerHTML=`<div class="card-inner"><span class="small-num tl">${txt}</span><span>${txt}</span><span class="small-num br">${txt}</span></div>`; return d;
 }
 
-function isValid(c, curColor, curVal) { return c.c === 'black' || c.c === curColor || c.v === curVal; }
+// --- KRİTİK GÜNCELLEME: KURAL MOTORU ---
+function isValid(card, curColor, curVal) { 
+    // 1. Eğer kart Joker ise her zaman atılır
+    if (card.c === 'black') return true;
+    
+    // 2. Renk uyuyorsa atılır
+    if (card.c === curColor) return true;
+    
+    // 3. Değer uyuyorsa atılır (String dönüşümü ile güvenli kontrol)
+    // Örn: Mavi 7 üzerine Sarı 7 -> "7" === "7" -> True
+    if (String(card.v) === String(curVal)) return true;
+    
+    return false; 
+}
 
 let pendingCard = null; 
 async function playCard(c, idx) {
@@ -626,19 +695,26 @@ async function executeMove(card, idx, nextColor) {
     }
     nextPlayers[myPlayerIndex].hand = myHand; nextPlayers[myPlayerIndex].uno = false; 
     
-    // SIRA HESAPLAMA DÜZELTMESİ (NEGATİF MODÜLO HATASINA KARŞI +2)
+    // SIRA HESAPLAMA DÜZELTMESİ
     let nextTurn = (gameState.turn + nextDirection + 2) % 2;
     if (skipTurn) nextTurn = (nextTurn + nextDirection + 2) % 2;
     
     let status = 'playing'; let winnerIndex = -1;
     if (myHand.length === 0 && !penalty) { status = 'finished'; winnerIndex = myPlayerIndex; }
     
+    // Joker atıldığında bir sonraki "Sayı Eşleşmesi" hatasını önlemek için
+    // curVal değerini özel bir karaktere çekiyoruz. Böylece Mavi Joker üzerine Sarı 7 atılamaz (Sadece renk tutmalı).
+    let finalVal = card.v;
+    if(card.c === 'black') {
+        finalVal = 'wild_reset'; 
+    }
+
     await getGameRef(currentRoomId).update({ 
         pile: firebase.firestore.FieldValue.arrayUnion(card), 
         players: nextPlayers, 
         turn: nextTurn, 
         curColor: nextColor,
-        curVal: card.v, 
+        curVal: finalVal, 
         deck: nextDeck, 
         status: status, 
         winnerIndex: winnerIndex, 
@@ -648,7 +724,9 @@ async function executeMove(card, idx, nextColor) {
 
 async function tryDrawCard() {
     if (gameState.turn !== myPlayerIndex || !currentUser || isDrawing) return;
+    // Eğer oynanabilir kart varsa uyar, çektirme
     if (gameState.players[myPlayerIndex].hand.some(c => isValid(c, gameState.curColor, gameState.curVal))) { msg("Oyna!", 1000); return; }
+    
     isDrawing = true; playSfx('draw');
     let nextDeck = [...gameState.deck]; let nextPlayers = [...gameState.players]; let nextTurn = gameState.turn;
     if (nextDeck.length === 0) {
@@ -657,7 +735,13 @@ async function tryDrawCard() {
         await getGameRef(currentRoomId).update({ pile: [top], deck: newDeck }); nextDeck = newDeck;
     }
     const card = nextDeck.pop(); nextPlayers[myPlayerIndex].hand.push(card);
-    if (!isValid(card, gameState.curColor, gameState.curVal)) { nextTurn = (gameState.turn + gameState.direction + 2) % 2; msg("Sıra Rakipte", 1500); } else msg("Oynayabilirsin", 1500);
+    
+    // Çekilen kart oynanamıyorsa sıra geçer
+    if (!isValid(card, gameState.curColor, gameState.curVal)) { 
+        nextTurn = (gameState.turn + gameState.direction + 2) % 2; 
+        msg("Sıra Rakipte", 1500); 
+    } else msg("Oynayabilirsin", 1500);
+    
     await getGameRef(currentRoomId).update({ deck: nextDeck, players: nextPlayers, turn: nextTurn });
     isDrawing = false;
 }
@@ -693,7 +777,7 @@ function toggleChatInput() {
 }
 async function sendChat() {
     const input = document.getElementById('chat-input'); const txt = input.value.trim(); if (!txt) return; input.value = '';
-    toggleChatInput(); // Mobilde mesaj atınca kutuyu kapat
+    toggleChatInput(); 
     await getGameRef(currentRoomId).update({ chat: firebase.firestore.FieldValue.arrayUnion({ sender: myPlayerIndex === 0 ? 'P1' : 'P2', text: txt }) });
 }
 function handleChatUpdates(chatArray) {
