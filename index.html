@@ -598,8 +598,21 @@ async function pickColor(color) {
 
 async function executeMove(card, idx, nextColor) {
     const myHand = [...gameState.players[myPlayerIndex].hand]; myHand.splice(idx, 1); 
+    let nextDeck = [...gameState.deck];
+    let nextPlayers = [...gameState.players];
     
-    // SIRA HESAPLAMA DÜZELTMESİ: Negatif modülo hatalarını önlemek için +2 ekliyoruz.
+    // --- UNO CEZASI KONTROLÜ ---
+    let penalty = false;
+    if (myHand.length === 0 && !gameState.players[myPlayerIndex].uno) {
+        penalty = true;
+        msg("UNO demeyi unuttun! +2 Ceza", 3000);
+        for(let i=0; i<2; i++) {
+           if (nextDeck.length > 0) myHand.push(nextDeck.pop());
+        }
+        nextPlayers[myPlayerIndex].uno = false;
+    }
+    // ---------------------------
+
     let nextDirection = gameState.direction;
     let skipTurn = false; let cardsToDraw = 0;
     
@@ -607,22 +620,19 @@ async function executeMove(card, idx, nextColor) {
     else if (card.v === 'reverse') { skipTurn = true; msg("Yön!", 1500); nextDirection *= -1; } 
     else if (card.v === 'draw2') { skipTurn = true; cardsToDraw = 2; msg("Rakip +2", 1500); } 
     else if (card.t === 'wild4') { skipTurn = true; cardsToDraw = 4; msg("Rakip +4", 1500); }
-
-    let nextTurn = (gameState.turn + nextDirection + 2) % 2; // Temel sıra geçişi
-    if (skipTurn) {
-        // Eğer Pas veya ceza kartı ise bir tur daha atlat
-        nextTurn = (nextTurn + nextDirection + 2) % 2;
-    }
-
-    let nextPlayers = [...gameState.players]; let nextDeck = [...gameState.deck];
+    
     if (cardsToDraw > 0) {
         const oppIndex = (myPlayerIndex + 1) % 2;
         for(let i=0; i<cardsToDraw; i++) { if (nextDeck.length > 0) nextPlayers[oppIndex].hand.push(nextDeck.pop()); }
     }
     nextPlayers[myPlayerIndex].hand = myHand; nextPlayers[myPlayerIndex].uno = false; 
     
+    // SIRA HESAPLAMA (Negatif modülo hatasını önlemek için +2)
+    let nextTurn = (gameState.turn + nextDirection + 2) % 2;
+    if (skipTurn) nextTurn = (nextTurn + nextDirection + 2) % 2;
+    
     let status = 'playing'; let winnerIndex = -1;
-    if (myHand.length === 0) { status = 'finished'; winnerIndex = myPlayerIndex; }
+    if (myHand.length === 0 && !penalty) { status = 'finished'; winnerIndex = myPlayerIndex; }
     
     await getGameRef(currentRoomId).update({ 
         pile: firebase.firestore.FieldValue.arrayUnion(card), 
@@ -649,7 +659,7 @@ async function tryDrawCard() {
     }
     const card = nextDeck.pop(); nextPlayers[myPlayerIndex].hand.push(card);
     
-    // Çekilen kart oynanamıyorsa sıra geçer. Modulo hatası olmaması için +2 ekledik.
+    // Kart çekince oynayamıyorsan sıra geçer (+2 ile modulo koruması)
     if (!isValid(card, gameState.curColor, gameState.curVal)) { 
         nextTurn = (gameState.turn + gameState.direction + 2) % 2; 
         msg("Sıra Rakipte", 1500); 
