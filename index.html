@@ -10,25 +10,29 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <style>
-        /* CSS AYNI KALIYOR - GEMINI KODUNDAKİ STİLLER */
         :root { --card-w: 72px; --card-h: 108px; --red: #ff5252; --blue: #448aff; --green: #69f0ae; --yellow: #ffd740; }
+        
         @media (max-width: 768px) {
             :root { --card-w: 54px; --card-h: 80px; }
             .small-num { display: none !important; }
             .card { font-size: 32px !important; border-width: 3px !important; }
-            #user-hand { justify-content: flex-start !important; overflow-x: auto !important; padding-left: 20px !important; padding-right: 20px !important; padding-bottom: 10px !important; }
-            .user-card { margin: 0 -6px !important; flex-shrink: 0 !important; }
+            /* Kullanıcı eli mobilde daha yukarıda */
+            #user-player { bottom: 110px !important; height: 100px !important; } 
+            #user-hand { padding-bottom: 0 !important; overflow-x: auto !important; justify-content: flex-start !important; }
+            .user-card { margin: 0 -10px !important; flex-shrink: 0 !important; }
             .user-card:hover { transform: translateY(-25px) scale(1.1) !important; z-index: 1000 !important; margin: 0 5px !important; }
-            #draw-pile-container { top: 18% !important; left: 12% !important; transform: translate(-50%, -50%) !important; z-index: 2000 !important; padding: 20px !important; background: rgba(255,255,255,0.01); border-radius: 10px; }
-            #draw-warning { bottom: 240px !important; font-size: 14px !important; padding: 8px 15px !important; }
-            #center-area { width: 170px !important; height: 170px !important; }
-            #color-indicator { width: 120px !important; height: 120px !important; }
-            #direction-ring { width: 140px !important; height: 140px !important; }
-            #pointer-tip { top: -22px !important; border-top-width: 22px !important; }
+            
+            #draw-pile-container { top: 25% !important; left: 50% !important; transform: translate(-50%, -50%) !important; }
+            #center-area { top: 45% !important; }
+            
+            #draw-warning { bottom: 220px !important; font-size: 14px !important; padding: 8px 15px !important; }
+            #uno-btn { bottom: 240px !important; right: 10px !important; width: 70px !important; height: 70px !important; }
         }
+
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; padding: 0; background: radial-gradient(circle at center, #388e3c 0%, #2e7d32 40%, #1b5e20 80%, #0a3d0a 100%); height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; color: white; }
         body::before { content: ""; position: absolute; inset: 0; background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulance type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E"); pointer-events: none; z-index: -1; }
+        
         .screen { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s; }
         .hidden { display: none !important; opacity: 0; pointer-events: none; }
         .game-title { font-size: 80px; font-weight: 900; background: linear-gradient(45deg, #ff5252, #ffd740, #69f0ae, #448aff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0; font-style: italic; letter-spacing: -5px; animation: hueRotate 3s infinite linear; text-align: center; }
@@ -39,9 +43,22 @@
         .btn-secondary { background: transparent; color: white; border: 3px solid white; box-shadow: none; }
         .btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
         .input-box { background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); padding: 15px; border-radius: 15px; color: white; font-size: 24px; text-align: center; margin-bottom: 20px; width: 250px; outline: none; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; }
+        
         #game-stage { width: 100%; height: 100%; position: relative; perspective: 1200px; }
         .player-area { position: absolute; transition: all 0.4s; display: flex; justify-content: center; align-items: center; flex-direction: column; }
         .player-badge { position: absolute; background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 100%); width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; border-radius: 50%; font-size: 24px; border: 3px solid rgba(255,255,255,0.6); color: white; z-index: 20; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.7); transition: all 0.3s; }
+        
+        /* Rakip Kartları (Sıkıştırılmış) */
+        #opp-hand { display: flex; justify-content: center; margin-top: 10px; }
+        #opp-hand .bot-card-back { 
+            width: var(--card-w); height: var(--card-h); border-radius: 10px; 
+            background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 50%, #fbc02d 100%); 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5); 
+            border: 3px solid white;
+            position: absolute; /* Üst üste binmesi için */
+            top: 0;
+        }
+
         .active-turn .player-badge { background: linear-gradient(135deg, #fbc02d 0%, #f57f17 100%); color: black; transform: scale(1.1); box-shadow: 0 0 30px #fbc02d; border-color: #fff; animation: badgePulse 1s infinite; }
         .card { width: var(--card-w); height: var(--card-h); border-radius: 10px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; font-weight: 900; font-size: 32px; border: 5px solid white; position: relative; flex-shrink: 0; transition: all 0.2s; }
         .card-inner { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; position: relative; border-radius: 5px; overflow: hidden; }
@@ -53,14 +70,16 @@
         .green .card-inner { background: linear-gradient(135deg, #69f0ae 0%, #00c853 100%); color: white; }
         .yellow .card-inner { background: linear-gradient(135deg, #ffd740 0%, #fbc02d 100%); color: #333; }
         .black .card-inner { background: linear-gradient(135deg, #424242 0%, #212121 100%); color: white; }
-        #opp-hand { display: flex; gap: 10px; padding: 0 20px; }
-        #opp-hand .bot-card-back { width: var(--card-w); height: var(--card-h); border-radius: 10px; background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 50%, #fbc02d 100%); box-shadow: 0 4px 8px rgba(0,0,0,0.5); margin: 0 -6px; flex-shrink: 0; border: 3px solid white; }
-        .top-state-card { z-index: 15 !important; box-shadow: 0 5px 15px rgba(0,0,0,0.8); }
+        
         #draw-pile-container { position: absolute; top: 50%; left: 20%; transform: translate(-50%, -50%); width: var(--card-w); height: var(--card-h); pointer-events: auto; cursor: pointer; transition: all 0.2s; z-index: 100; }
+        
+        /* Yerdeki Kartlar - Üst üste bindirme */
         #discard-pile-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: var(--card-w); height: var(--card-h); display: block; }
-        #discard-pile-container .card { position: absolute; top: 0; left: 0; transition: all 0.4s; transform: translate(0, 0) rotate(0deg); }
-        #top-player { top: 40px; left: 50%; transform: translateX(-50%); width: 100%; }
-        #top-player .player-badge { bottom: -40px; }
+        #discard-pile-container .card { position: absolute; top: 0; left: 0; transition: all 0.2s; }
+        
+        #top-player { top: 30px; left: 50%; transform: translateX(-50%); width: 100%; height: 120px; display: flex; justify-content: center; }
+        #top-player .player-badge { top: 10px; z-index: 60; }
+        
         #user-player { bottom: 30px; left: 0; width: 100%; height: 160px; align-items: flex-end; z-index: 100; }
         #center-area { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 300px; display: flex; justify-content: center; align-items: center; pointer-events: none; }
         #color-indicator { position: absolute; width: 220px; height: 220px; border-radius: 50%; border: 8px solid white; background: #333; transition: all 0.5s; z-index: -1; box-shadow: 0 0 60px rgba(0,0,0,0.8); }
@@ -70,12 +89,26 @@
         #pointer-tip-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transition: transform 0.6s; }
         #pointer-tip { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 35px solid #fbc02d; filter: drop-shadow(0 0 10px rgba(251,192,45,0.8)); }
         @keyframes hueRotate { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+        @keyframes unoPulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+        /* Sohbet düğmesi stili */
+        #chat-trigger-btn {
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+            color: white; border-radius: 15px; padding: 5px 15px; font-size: 14px;
+            cursor: pointer; display: flex; align-items: center; gap: 5px;
+            pointer-events: auto; margin-top: 5px;
+        }
     </style>
 </head>
 <body>
 
 <div id="loading-overlay" class="screen"><div style="font-size: 24px;">Sunucuya Bağlanıyor...</div></div>
-<div id="server-id-display"></div>
+
+<!-- ID ve Sohbet Butonu -->
+<div style="position: fixed; top: 10px; left: 10px; z-index: 9000; display: flex; flex-direction: column; align-items: flex-start;">
+    <div id="server-id-display" style="font-size: 12px; color: rgba(255,255,255,0.6);"></div>
+    <button id="chat-trigger-btn" onclick="toggleChatInput()" class="hidden">💬 Sohbet</button>
+</div>
 
 <!-- MENU SCREEN -->
 <div id="menu-screen" class="screen hidden">
@@ -129,33 +162,46 @@
 <!-- GAME STAGE -->
 <div id="game-stage" class="hidden">
     <div id="draw-pile-container" onclick="tryDrawCard()">
-        <div class="card card-back" style="top:-4px; left:-2px;"></div>
-        <div class="card card-back" style="top:-2px; left:-1px;"></div>
-        <div class="card card-back"><div class="card-inner" style="background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 50%, #fbc02d 100%);"><div class="logo" style="font-size: 18px; font-style: italic; color: white; transform: rotate(-20deg); text-shadow: 2px 2px 4px rgba(0,0,0,0.7); font-weight: 900;">UNO</div></div></div>
+        <!-- Tek kart görünümü -->
+        <div class="card card-back" style="box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
+            <div class="card-inner" style="background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 50%, #fbc02d 100%);">
+                <div class="logo" style="font-size: 18px; font-style: italic; color: white; transform: rotate(-20deg); text-shadow: 2px 2px 4px rgba(0,0,0,0.7); font-weight: 900;">UNO</div>
+            </div>
+        </div>
     </div>
+    
     <div id="center-area">
         <div id="direction-ring"></div>
         <div id="pointer-tip-container"><div id="pointer-tip"></div></div>
         <div id="color-indicator"></div>
         <div id="discard-pile-container"></div>
     </div>
+    
     <div id="top-player" class="player-area">
-        <div class="uno-badge" style="position: absolute; background: linear-gradient(135deg, #ff6b6b, #ee5a6f); color: white; font-weight: 900; padding: 6px 12px; border-radius: 12px; border: 3px solid white; font-size: 14px; top: -30px; box-shadow: 0 0 20px rgba(255,0,0,0.8); animation: unoPulse 0.6s infinite; display: none; z-index: 50; letter-spacing: 2px;">UNO</div>
+        <!-- Rakip UNO rozeti -->
+        <div class="uno-badge" id="opp-uno-badge" style="position: absolute; background: #ff5252; color: white; font-weight: 900; padding: 5px 10px; border-radius: 10px; border: 2px solid white; top: 80px; left: 50%; transform: translateX(-50%); z-index: 200; display: none; box-shadow: 0 0 15px red; animation: unoPulse 0.8s infinite;">UNO!</div>
+        
         <div class="player-badge" id="opp-badge">0</div>
         <div class="bot-hand" id="opp-hand"></div>
     </div>
+    
     <div id="draw-warning" style="position: absolute; bottom: 200px; left: 50%; transform: translateX(-50%); background: #c62828; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; border: 3px solid white; white-space: nowrap; pointer-events: none; z-index: 900;">SIRA SENDE! KART ÇEK VEYA OYNA</div>
+    
     <div id="user-player" class="player-area">
-        <div class="uno-badge" style="position: absolute; background: linear-gradient(135deg, #ff6b6b, #ee5a6f); color: white; font-weight: 900; padding: 6px 12px; border-radius: 12px; border: 3px solid white; font-size: 14px; top: -30px; box-shadow: 0 0 20px rgba(255,0,0,0.8); animation: unoPulse 0.6s infinite; display: none; z-index: 50; letter-spacing: 2px;">UNO</div>
+        <!-- Benim UNO rozetim -->
+        <div class="uno-badge" id="my-uno-badge" style="position: absolute; background: #ff5252; color: white; font-weight: 900; padding: 5px 10px; border-radius: 10px; border: 2px solid white; top: -40px; left: 50%; transform: translateX(-50%); z-index: 200; display: none; box-shadow: 0 0 15px red; animation: unoPulse 0.8s infinite;">UNO!</div>
         <div id="user-hand" style="display: flex; justify-content: center; align-items: flex-end; height: 100%; width: 100%; padding: 0 20px;"></div>
     </div>
-    <div id="chat-display-area" style="position: fixed; top: 15%; left: 0; width: 100%; height: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; z-index: 8000;"></div>
-    <div id="chat-ui" style="position: fixed; bottom: 20px; right: 20px; z-index: 9000; display: flex; align-items: center;">
-        <div id="chat-input-container" style="display: none; margin-right: 10px; background: rgba(0,0,0,0.8); padding: 5px; border-radius: 30px; border: 1px solid white;">
-            <input type="text" id="chat-input" placeholder="Mesaj yaz..." maxlength="30" style="background: transparent; border: none; color: white; padding: 8px 15px; font-size: 16px; outline: none; width: 150px;">
-            <button id="chat-send-btn" onclick="sendChat()" style="background: #00e676; border: none; width: 35px; height: 35px; border-radius: 50%; color: white; cursor: pointer; font-weight: bold;">></button>
+
+    <!-- CHAT UI -->
+    <div id="chat-display-area" style="position: fixed; top: 20%; left: 50%; transform: translateX(-50%); width: 90%; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; z-index: 8000;"></div>
+    
+    <div id="chat-input-container" style="position: fixed; top: 40px; left: 10px; display: none; background: rgba(0,0,0,0.9); padding: 10px; border-radius: 10px; border: 1px solid white; z-index: 9001;">
+        <div style="display:flex; gap:5px;">
+            <input type="text" id="chat-input" placeholder="Mesaj..." maxlength="30" style="background: #333; border: 1px solid #555; color: white; padding: 5px; border-radius: 5px; width: 150px;">
+            <button onclick="sendChat()" style="background: #00e676; border: none; padding: 5px 10px; border-radius: 5px; color: black; font-weight: bold;">></button>
         </div>
-        <button id="chat-toggle-btn" onclick="toggleChatInput()" style="width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid white; color: white; font-size: 24px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s;">💬</button>
+        <button onclick="toggleChatInput()" style="margin-top:5px; width:100%; background:#444; border:none; color:#aaa; font-size:10px;">Kapat</button>
     </div>
 </div>
 
@@ -235,7 +281,6 @@ auth.onAuthStateChanged((user) => {
 });
 
 function getGameRef(roomId) {
-    // Gemini'dan bagimsiz, temiz bir koleksiyon yapisi:
     return db.collection('games').doc(roomId);
 }
 
@@ -325,14 +370,16 @@ function enterLobby(roomId, index) {
             document.getElementById('game-stage').classList.add('hidden');
             document.getElementById('result-screen').classList.add('hidden');
             document.getElementById('lobby-screen').classList.remove('hidden');
+            document.getElementById('chat-trigger-btn').classList.add('hidden');
             updateLobbyUI(data);
         } else if (data.status === 'playing') {
             document.getElementById('lobby-screen').classList.add('hidden');
             document.getElementById('result-screen').classList.add('hidden');
             document.getElementById('game-stage').classList.remove('hidden');
+            document.getElementById('chat-trigger-btn').classList.remove('hidden');
             updateGameUI(data);
             handleChatUpdates(data.chat || []);
-        } else if (data.status === 'finished') { showResult(data); }
+        } else if (data.status === 'finished') { showResult(data); document.getElementById('chat-trigger-btn').classList.add('hidden'); }
         if (isHost && data.status === 'finished' && data.rematch && data.rematch[0] && data.rematch[1]) { initializeGameLogic(); }
     });
 }
@@ -349,11 +396,11 @@ function leaveRoom() {
     playSfx('click');
     if (gameUnsubscribe) gameUnsubscribe();
     gameUnsubscribe = null;
-    currentRoomId = null;
     gameState = null;
     document.getElementById('game-stage').classList.add('hidden');
     document.getElementById('result-screen').classList.add('hidden');
     document.getElementById('lobby-screen').classList.add('hidden');
+    document.getElementById('chat-trigger-btn').classList.add('hidden');
     document.getElementById('menu-screen').classList.remove('hidden');
     document.getElementById('chat-display-area').innerHTML = '';
     resetMenu();
@@ -397,16 +444,53 @@ function updateLobbyUI(data) {
 }
 
 function updateGameUI(data) {
-    const topCard = data.pile[data.pile.length - 1];
-    let cardForState = topCard;
-    if (topCard.t === 'wild4' || topCard.v === 'draw2') {
-        for (let i = data.pile.length - 2; i >= 0; i--) {
-            if (data.pile[i].c !== 'black' && data.pile[i].v !== 'draw2' && data.pile[i].v !== '+4') { cardForState = data.pile[i]; break; }
+    // Discard Pile'i güncelle - Altında önceki kartı da göster
+    const pile = data.pile;
+    const container = document.getElementById('discard-pile-container');
+    container.innerHTML = '';
+
+    // Yerdeki son 2 kartı al
+    const visibleCards = pile.slice(Math.max(0, pile.length - 2));
+    
+    visibleCards.forEach((card, index) => {
+        const isTop = (index === visibleCards.length - 1); // En üstteki kart mı?
+        const el = makeCard(card);
+        
+        // Eğer bu kart en üstteki değilse (yani alttaki kartsa) biraz aşağı kaydır
+        // ve numarasının görünmesi için ayarla
+        if (!isTop) {
+             el.style.transform = 'translate(0px, 35px) scale(0.95)'; // Aşağı ve biraz küçük
+             el.style.zIndex = 5;
+             el.style.filter = 'brightness(0.8)'; // Hafif karart
+        } else {
+             el.style.transform = 'translate(0px, 0px)';
+             el.style.zIndex = 10;
         }
-    }
-    updatePile(data.pile, cardForState); updateColor(data.curColor); updateDirection(data);
+
+        // Joker (W/Black) kart durumu - Renk değişimi
+        if (card.c === 'black' && isTop && data.curColor !== 'black') {
+             el.className = `card ${data.curColor}`;
+             let txt=card.v; if(txt==='W')txt='🌈'; else if(txt==='+4')txt='+4';
+             el.innerHTML=`<div class="card-inner"><span class="small-num tl">${txt}</span><span>${txt}</span><span class="small-num br">${txt}</span></div>`;
+        }
+        
+        container.appendChild(el);
+    });
+
+    updateColor(data.curColor); 
+    updateDirection(data);
     renderMyHand(data.players[myPlayerIndex].hand, data);
-    renderOpponentHand(data.players[myPlayerIndex === 0 ? 1 : 0].hand.length);
+    
+    // Rakip eli
+    const oppIndex = myPlayerIndex === 0 ? 1 : 0;
+    renderOpponentHand(data.players[oppIndex].hand.length);
+    
+    // UNO Rozet Kontrolü
+    const me = data.players[myPlayerIndex];
+    const opp = data.players[oppIndex];
+    document.getElementById('my-uno-badge').style.display = me.uno ? 'block' : 'none';
+    document.getElementById('opp-uno-badge').style.display = opp.uno ? 'block' : 'none';
+
     document.getElementById('user-player').classList.toggle('active-turn', data.turn === myPlayerIndex);
     document.getElementById('top-player').classList.toggle('active-turn', data.turn !== myPlayerIndex);
     const warning = document.getElementById('draw-warning');
@@ -414,24 +498,9 @@ function updateGameUI(data) {
         if (!data.players[myPlayerIndex].hand.some(c => isValid(c, data.curColor, data.curVal))) { warning.style.display = 'block'; warning.innerText = "KART ÇEK!"; warning.style.background = '#c62828'; }
         else { warning.style.display = 'none'; }
     } else { warning.style.display = 'block'; warning.innerText = "RAKİBİN SIRASI"; warning.style.background = '#333'; }
+    
     const isUnoPending = data.turn === myPlayerIndex && data.players[myPlayerIndex].hand.length === 2 && !data.players[myPlayerIndex].uno;
     document.getElementById('uno-btn').style.display = isUnoPending ? 'block' : 'none';
-}
-
-function updatePile(pile, cardForState) {
-    const container = document.getElementById('discard-pile-container'); container.innerHTML = ''; 
-    pile.slice(Math.max(0, pile.length - 4)).forEach((card, index) => {
-        const isTop = (card === cardForState); const el = makeCard(card);
-        el.style.zIndex = isTop ? 15 : 10;
-        if(!isTop) el.style.transform = `translate(${(index * 2) % 6 - 3}px, ${(index * 2) % 6 - 3}px) rotate(${(index * 5) % 15 - 7}deg)`;
-        else el.classList.add('top-state-card');
-        if (card.c === 'black' && gameState.curColor !== 'black' && card === pile[pile.length-1]) {
-             el.className = `card ${gameState.curColor} top-state-card`;
-             let txt=card.v; if(txt==='W')txt='🌈'; else if(txt==='+4')txt='+4';
-             el.innerHTML=`<div class="card-inner"><span class="small-num tl">${txt}</span><span>${txt}</span><span class="small-num br">${txt}</span></div>`;
-        }
-        container.appendChild(el);
-    });
 }
 
 function renderMyHand(hand, data) {
@@ -449,7 +518,16 @@ function renderMyHand(hand, data) {
 
 function renderOpponentHand(count) {
     const container = document.getElementById('opp-hand'); container.innerHTML = '';
-    for(let i=0; i<count; i++) { const el = document.createElement('div'); el.className = 'bot-card-back'; container.appendChild(el); }
+    // Sadece destelenmiş kart görüntüsü için 3-4 tane div yeterli görsel olarak, hepsi tek bir noktada
+    const visualCount = Math.min(count, 3); 
+    for(let i=0; i<visualCount; i++) { 
+        const el = document.createElement('div'); 
+        el.className = 'bot-card-back'; 
+        // Hafif offset vererek derinlik kat
+        el.style.transform = `translateY(-${i*3}px) translateX(${i*2}px)`;
+        el.style.zIndex = i;
+        container.appendChild(el); 
+    }
     document.getElementById('opp-badge').innerText = count;
 }
 
@@ -544,9 +622,14 @@ function showResult(data) {
 
 async function requestRematch() { await getGameRef(currentRoomId).update({ [`rematch.${myPlayerIndex}`]: true }); }
 
-function toggleChatInput() { const i = document.getElementById('chat-input-container'); i.style.display = i.style.display === 'none' ? 'block' : 'none'; if(i.style.display === 'block') document.getElementById('chat-input').focus(); }
+function toggleChatInput() { 
+    const i = document.getElementById('chat-input-container'); 
+    i.style.display = i.style.display === 'none' ? 'block' : 'none'; 
+    if(i.style.display === 'block') document.getElementById('chat-input').focus(); 
+}
 async function sendChat() {
     const input = document.getElementById('chat-input'); const txt = input.value.trim(); if (!txt) return; input.value = '';
+    toggleChatInput(); // Mobilde mesaj atınca kutuyu kapat
     await getGameRef(currentRoomId).update({ chat: firebase.firestore.FieldValue.arrayUnion({ sender: myPlayerIndex === 0 ? 'P1' : 'P2', text: txt }) });
 }
 function handleChatUpdates(chatArray) {
@@ -557,7 +640,7 @@ function createToast(sender, text) {
     const container = document.getElementById('chat-display-area'); const el = document.createElement('div');
     const isMe = (sender === (myPlayerIndex === 0 ? 'P1' : 'P2'));
     el.innerHTML = `<strong>${isMe?'Ben':'Rakip'}:</strong> ${text}`;
-    el.style.cssText = `border: 2px solid ${isMe?'#00e676':'#ff5252'}; background:rgba(0,0,0,0.85); padding:8px 20px; border-radius:25px; color:white; max-width:80%; text-align:center; margin-top:5px;`;
+    el.style.cssText = `border: 2px solid ${isMe?'#00e676':'#ff5252'}; background:rgba(0,0,0,0.85); padding:8px 20px; border-radius:25px; color:white; text-align:center; box-shadow: 0 4px 10px black;`;
     container.appendChild(el); setTimeout(() => el.remove(), 4000);
 }
 </script>
