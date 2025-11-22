@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UNO Online - Share & Play</title>
+    <title>UNO Online - Final Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -28,13 +28,9 @@
             #color-indicator { width: 130px !important; height: 130px !important; font-size: 12px !important; }
             #direction-ring { width: 160px !important; height: 160px !important; }
             #pointer-tip { top: -25px !important; border-top-width: 25px !important; }
-            
             #draw-warning { bottom: 230px !important; font-size: 14px !important; padding: 8px 15px !important; z-index: 960 !important; }
             #uno-btn { bottom: 250px !important; right: 10px !important; width: 70px !important; height: 70px !important; }
-            
-            /* PAS BUTONU KONUMU (UYARI İLE ÇAKIŞMAZ) */
             #pass-btn { bottom: 180px !important; left: 50% !important; transform: translateX(-50%) !important; }
-            
             #menu-buttons { flex-direction: column !important; gap: 15px !important; width: 100% !important; align-items: center !important; }
             .btn-main { width: 80% !important; margin: 5px 0 !important; font-size: 20px !important; }
         }
@@ -383,15 +379,22 @@ function leaveRoom() {
     resetMenu();
 }
 
+// YENİ: KARTLARA ID EKLEME (ARRAY UNION HATASI ÇÖZÜMÜ)
 async function initializeGameLogic() {
     const colors = ['red','blue','green','yellow'];
     let deck = [];
     colors.forEach(c => {
-        deck.push({c, v: '0', t:'n'}); 
+        deck.push({c, v: '0', t:'n', id: Math.random().toString(36).substr(2, 9)}); 
         const values = ['1','2','3','4','5','6','7','8','9','skip','reverse','draw2'];
-        values.forEach(v => { deck.push({c, v, t:'n'}); deck.push({c, v, t:'n'}); });
+        values.forEach(v => { 
+            deck.push({c, v, t:'n', id: Math.random().toString(36).substr(2, 9)}); 
+            deck.push({c, v, t:'n', id: Math.random().toString(36).substr(2, 9)}); 
+        });
     });
-    for(let i=0; i<4; i++) { deck.push({c:'black', v:'W', t:'wild'}); deck.push({c:'black', v:'+4', t:'wild4'}); }
+    for(let i=0; i<4; i++) { 
+        deck.push({c:'black', v:'W', t:'wild', id: Math.random().toString(36).substr(2, 9)}); 
+        deck.push({c:'black', v:'+4', t:'wild4', id: Math.random().toString(36).substr(2, 9)}); 
+    }
     deck.sort(() => Math.random() - 0.5);
     const p1Hand = []; const p2Hand = [];
     for(let i=0; i<7; i++) { p1Hand.push(deck.pop()); p2Hand.push(deck.pop()); }
@@ -455,16 +458,13 @@ function updateGameUI(data) {
     document.getElementById('pass-btn').style.display = 'none'; 
 
     if (data.turn === myPlayerIndex) {
-        // Eğer bu tur kart çektiyse
         if (drawnCardThisTurn) {
-             // Oynanabilir kart var mı kontrol et
              const canPlayAfterDraw = data.players[myPlayerIndex].hand.some(c => isValid(c, data.curColor, data.curVal));
              if (canPlayAfterDraw) {
                  document.getElementById('pass-btn').style.display = 'block';
                  warning.innerText = "OYNA VEYA PAS GEÇ";
                  warning.style.background = '#ff9800';
              } else {
-                 // Otomatik Pas (Eğer kart oynanamazsa)
                  warning.innerText = "KART UYMUYOR, SIRA GEÇİYOR...";
                  warning.style.background = '#333';
                  setTimeout(passTurn, 1500);
@@ -606,7 +606,9 @@ async function executeMove(card, idx, nextColor) {
     let status = 'playing'; let winnerIndex = -1;
     if (myHand.length === 0 && !penalty) { status = 'finished'; winnerIndex = myPlayerIndex; }
     
-    // RENK FIX: Eğer kart siyah değilse, rengi zorla kartın rengi yap.
+    let finalVal = card.v;
+    if(card.c === 'black') finalVal = 'wild_reset'; 
+    
     let finalColor = (card.c === 'black') ? nextColor : card.c;
     drawnCardThisTurn = false; 
 
@@ -702,4 +704,3 @@ function createToast(sender, text) {
 </script>
 </body>
 </html>
-
