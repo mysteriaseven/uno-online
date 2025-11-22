@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UNO Online - Final Rules</title>
+    <title>UNO Online - Final UI Fixes</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -12,12 +12,21 @@
     <style>
         :root { --card-w: 72px; --card-h: 108px; --red: #ff5252; --blue: #448aff; --green: #69f0ae; --yellow: #ffd740; }
         
+        /* Animasyonlar */
+        @keyframes cardEntry {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-entry { animation: cardEntry 0.4s ease-out; }
+
         @media (max-width: 768px) {
             :root { --card-w: 54px; --card-h: 80px; }
             .small-num { display: none !important; }
             .card { font-size: 32px !important; border-width: 3px !important; }
             
             #user-player { bottom: 110px !important; height: 100px !important; } 
+            
+            /* KART ARALIKLARI */
             #user-hand { padding-bottom: 0 !important; overflow-x: auto !important; justify-content: flex-start !important; padding-left: 20px; }
             .user-card { margin: 0 2px !important; flex-shrink: 0 !important; }
             .user-card:hover, .user-card:active { transform: translateY(-25px) scale(1.1) !important; z-index: 1000 !important; margin: 0 10px !important; }
@@ -28,9 +37,17 @@
             #color-indicator { width: 130px !important; height: 130px !important; font-size: 12px !important; }
             #direction-ring { width: 160px !important; height: 160px !important; }
             #pointer-tip { top: -25px !important; border-top-width: 25px !important; }
-            #draw-warning { bottom: 230px !important; font-size: 14px !important; padding: 8px 15px !important; z-index: 960 !important; }
-            #uno-btn { bottom: 250px !important; right: 10px !important; width: 70px !important; height: 70px !important; }
-            #pass-btn { bottom: 180px !important; left: 50% !important; transform: translateX(-50%) !important; }
+            
+            /* KONUM DÜZELTMELERİ (MOBİL) */
+            #draw-warning { bottom: 220px !important; font-size: 14px !important; padding: 8px 15px !important; z-index: 960 !important; }
+            #uno-btn { bottom: 260px !important; right: 10px !important; width: 70px !important; height: 70px !important; }
+            
+            /* PAS BUTONU - Uyarının Üstüne */
+            #pass-btn { bottom: 270px !important; left: 50% !important; transform: translateX(-50%) !important; }
+            
+            /* UNO ROZETİ - Yana */
+            #my-uno-badge { top: -60px !important; left: auto !important; right: 20px !important; transform: none !important; }
+
             #menu-buttons { flex-direction: column !important; gap: 15px !important; width: 100% !important; align-items: center !important; }
             .btn-main { width: 80% !important; margin: 5px 0 !important; font-size: 20px !important; }
         }
@@ -104,8 +121,9 @@
         #draw-warning.clickable { cursor: pointer; pointer-events: auto !important; transition: transform 0.2s; }
         #draw-warning.clickable:active { transform: translateX(-50%) scale(0.95); }
         
+        /* Pas Geç Butonu - PC Default */
         #pass-btn {
-            position: absolute; bottom: 180px; left: 50%; transform: translateX(-50%);
+            position: absolute; bottom: 270px; left: 50%; transform: translateX(-50%);
             background: #757575; color: white; border: 3px solid white;
             padding: 10px 25px; border-radius: 30px; font-weight: bold; font-size: 18px;
             cursor: pointer; z-index: 950; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
@@ -131,6 +149,12 @@
 <div id="menu-screen" class="screen hidden">
     <div class="modern-title-container"><div class="title-card t-red">U</div><div class="title-card t-yellow">N</div><div class="title-card t-blue">O</div></div>
     <div class="subtitle">ONLINE MULTIPLAYER</div>
+    
+    <!-- KURAL UYARISI EKLENDI -->
+    <div style="color: #ffd740; font-weight: bold; font-size: 14px; text-align: center; max-width: 320px; margin-bottom: 20px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; border: 1px solid #ffd740;">
+        ⚠️ Elinde 2 kart varken, 1'ini atmadan ÖNCE "UNO" butonuna basmalısın!
+    </div>
+
     <div id="menu-buttons">
         <button id="btn-create" class="btn-main" onclick="showCreateRoom()" disabled>ODA OLUŞTUR</button>
         <button id="btn-join" class="btn-main btn-secondary" onclick="showJoinRoom()" disabled>ODAYA KATIL</button>
@@ -186,7 +210,8 @@
     </div>
     <div id="draw-warning" onclick="tryDrawCard()" style="position: absolute; bottom: 200px; left: 50%; transform: translateX(-50%); background: #c62828; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; border: 3px solid white; white-space: nowrap; pointer-events: none; z-index: 900;"></div>
     <div id="user-player" class="player-area">
-        <div class="uno-badge" id="my-uno-badge" style="position: absolute; background: #ff5252; color: white; font-weight: 900; padding: 5px 10px; border-radius: 10px; border: 2px solid white; top: -40px; left: 50%; transform: translateX(-50%); z-index: 200; display: none; box-shadow: 0 0 15px red; animation: unoPulse 0.8s infinite;">UNO!</div>
+        <!-- ROZET KONUMU DÜZELTİLDİ -->
+        <div class="uno-badge" id="my-uno-badge" style="position: absolute; background: #ff5252; color: white; font-weight: 900; padding: 5px 10px; border-radius: 10px; border: 2px solid white; top: -60px; right: 20px; z-index: 200; display: none; box-shadow: 0 0 15px red; animation: unoPulse 0.8s infinite;">UNO!</div>
         <div id="user-hand" style="display: flex; justify-content: center; align-items: flex-end; height: 100%; width: 100%; padding: 0 20px;"></div>
     </div>
     <div id="chat-display-area" style="position: fixed; top: 20%; left: 50%; transform: translateX(-50%); width: 90%; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; z-index: 8000;"></div>
@@ -204,6 +229,7 @@
 
 <div id="msg-overlay" style="position: fixed; top: 25%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); padding: 15px 40px; border-radius: 40px; color: white; font-size: 22px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 5000; border: 2px solid white; text-align: center; font-weight: bold;"></div>
 
+<!-- SEFFAF RENK SECICI -->
 <div id="color-picker" style="position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 6000; display: none; justify-content: center; align-items: center; gap: 20px;">
     <div class="cp-btn" style="width: 90px; height: 90px; border-radius: 20px; border: 4px solid white; cursor: pointer; transition: all 0.3s; position: relative; background:var(--red)" onclick="pickColor('red')"></div>
     <div class="cp-btn" style="width: 90px; height: 90px; border-radius: 20px; border: 4px solid white; cursor: pointer; transition: all 0.3s; position: relative; background:var(--blue)" onclick="pickColor('blue')"></div>
@@ -474,9 +500,7 @@ function updateGameUI(data) {
         warning.innerText = "RAKİBİN SIRASI"; warning.style.background = '#333'; warning.style.color = 'white';
     }
     
-    // DÜZELTME: UNO butonu SADECE elinde 2 kart varken görünür
-    const handSize = data.players[myPlayerIndex].hand.length;
-    const isUnoPending = data.turn === myPlayerIndex && (handSize === 2) && !data.players[myPlayerIndex].uno;
+    const isUnoPending = data.turn === myPlayerIndex && (data.players[myPlayerIndex].hand.length === 2) && !data.players[myPlayerIndex].uno;
     document.getElementById('uno-btn').style.display = isUnoPending ? 'block' : 'none';
 }
 
@@ -485,6 +509,11 @@ function renderMyHand(hand, data) {
     hand.sort((a,b) => a.c === b.c ? String(a.v).localeCompare(String(b.v)) : a.c.localeCompare(b.c));
     hand.forEach((c, idx) => {
         const el = makeCard(c); el.classList.add('user-card');
+        // YENİ KARTLARA ANİMASYON EKLE
+        // Basit bir kontrol: Eğer bu kartın ID'si eski elde yoksa animasyon ekle (Burada basitleştirilmiş versiyon: her renderda ekliyoruz ama sadece yeni gelenlere CSS class veriyoruz)
+        // Daha basit çözüm: Her zaman animasyon class'ı ekle, zaten React gibi DOM diffing yapmıyoruz, her seferinde yeniden çiziyoruz.
+        el.classList.add('animate-entry');
+        
         if (data.turn === myPlayerIndex) {
              if (isValid(c, data.curColor, data.curVal)) { 
                  el.style.boxShadow = '0 0 15px 5px rgba(255, 255, 255, 0.5)'; el.style.borderColor = '#fbc02d'; 
@@ -560,8 +589,6 @@ async function executeMove(card, idx, nextColor) {
     let nextPlayers = [...gameState.players];
     
     let penalty = false;
-    
-    // DÜZELTME: 2 kart varken UNO demeden atarsan (1 karta düşersen) ceza yersin
     if (myHand.length === 1) {
         if (!localUnoPressed) {
             penalty = true;
@@ -570,7 +597,6 @@ async function executeMove(card, idx, nextColor) {
                 if (nextDeck.length === 0) reshufflePile(gameState.pile, nextDeck);
                 if (nextDeck.length > 0) myHand.push(nextDeck.pop()); 
             }
-            // Ceza yediğin için sıra sende kalsa bile UNO durumu resetlenir
             nextPlayers[myPlayerIndex].uno = false;
             localUnoPressed = false;
         }
@@ -601,7 +627,7 @@ async function executeMove(card, idx, nextColor) {
     }
     
     let status = 'playing'; let winnerIndex = -1;
-    if (myHand.length === 0) { status = 'finished'; winnerIndex = myPlayerIndex; }
+    if (myHand.length === 0 && !penalty) { status = 'finished'; winnerIndex = myPlayerIndex; }
     
     let finalVal = card.v;
     if(card.c === 'black') finalVal = 'wild_reset'; 
