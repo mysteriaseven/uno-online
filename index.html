@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UNO Online - Final UI Fixes</title>
+    <title>UNO Online - No Hand Animation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -12,13 +12,6 @@
     <style>
         :root { --card-w: 72px; --card-h: 108px; --red: #ff5252; --blue: #448aff; --green: #69f0ae; --yellow: #ffd740; }
         
-        /* Animasyonlar */
-        @keyframes cardEntry {
-            from { transform: translateY(100px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .animate-entry { animation: cardEntry 0.4s ease-out; }
-
         @media (max-width: 768px) {
             :root { --card-w: 54px; --card-h: 80px; }
             .small-num { display: none !important; }
@@ -42,10 +35,10 @@
             #draw-warning { bottom: 220px !important; font-size: 14px !important; padding: 8px 15px !important; z-index: 960 !important; }
             #uno-btn { bottom: 260px !important; right: 10px !important; width: 70px !important; height: 70px !important; }
             
-            /* PAS BUTONU - Uyarının Üstüne */
+            /* PAS BUTONU */
             #pass-btn { bottom: 270px !important; left: 50% !important; transform: translateX(-50%) !important; }
             
-            /* UNO ROZETİ - Yana */
+            /* UNO ROZETİ */
             #my-uno-badge { top: -60px !important; left: auto !important; right: 20px !important; transform: none !important; }
 
             #menu-buttons { flex-direction: column !important; gap: 15px !important; width: 100% !important; align-items: center !important; }
@@ -121,7 +114,6 @@
         #draw-warning.clickable { cursor: pointer; pointer-events: auto !important; transition: transform 0.2s; }
         #draw-warning.clickable:active { transform: translateX(-50%) scale(0.95); }
         
-        /* Pas Geç Butonu - PC Default */
         #pass-btn {
             position: absolute; bottom: 270px; left: 50%; transform: translateX(-50%);
             background: #757575; color: white; border: 3px solid white;
@@ -509,11 +501,6 @@ function renderMyHand(hand, data) {
     hand.sort((a,b) => a.c === b.c ? String(a.v).localeCompare(String(b.v)) : a.c.localeCompare(b.c));
     hand.forEach((c, idx) => {
         const el = makeCard(c); el.classList.add('user-card');
-        // YENİ KARTLARA ANİMASYON EKLE
-        // Basit bir kontrol: Eğer bu kartın ID'si eski elde yoksa animasyon ekle (Burada basitleştirilmiş versiyon: her renderda ekliyoruz ama sadece yeni gelenlere CSS class veriyoruz)
-        // Daha basit çözüm: Her zaman animasyon class'ı ekle, zaten React gibi DOM diffing yapmıyoruz, her seferinde yeniden çiziyoruz.
-        el.classList.add('animate-entry');
-        
         if (data.turn === myPlayerIndex) {
              if (isValid(c, data.curColor, data.curVal)) { 
                  el.style.boxShadow = '0 0 15px 5px rgba(255, 255, 255, 0.5)'; el.style.borderColor = '#fbc02d'; 
@@ -589,7 +576,10 @@ async function executeMove(card, idx, nextColor) {
     let nextPlayers = [...gameState.players];
     
     let penalty = false;
-    if (myHand.length === 1) {
+    if (myHand.length === 0) {
+        // Son kart atıldıysa, daha önce ceza yenip yenmediğine bakılmaz, oyun biter.
+    } else if (myHand.length === 1) {
+        // 2 karttan 1 karta düştü. Eğer UNO demediyse CEZA YER.
         if (!localUnoPressed) {
             penalty = true;
             msg("UNO demediğin için +2 Ceza yedin!", 3000);
@@ -627,7 +617,7 @@ async function executeMove(card, idx, nextColor) {
     }
     
     let status = 'playing'; let winnerIndex = -1;
-    if (myHand.length === 0 && !penalty) { status = 'finished'; winnerIndex = myPlayerIndex; }
+    if (myHand.length === 0) { status = 'finished'; winnerIndex = myPlayerIndex; }
     
     let finalVal = card.v;
     if(card.c === 'black') finalVal = 'wild_reset'; 
